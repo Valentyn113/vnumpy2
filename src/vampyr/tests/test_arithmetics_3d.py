@@ -1,14 +1,14 @@
 import numpy as np
 import pytest
 
-from vampyr import vampyr3d as vp
+import vampyr as vp
 
 epsilon = 1.0e-3
 
 D = 3
 k = 5
 N = -2
-world = vp.BoundingBox(scale=N)
+world = vp.BoundingBox(dim=3, scale=N)
 mra = vp.MultiResolutionAnalysis(box=world, order=k)
 
 r0 = [0.8, 0.8, 0.8]

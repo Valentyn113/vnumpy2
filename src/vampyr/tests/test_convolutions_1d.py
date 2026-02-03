@@ -1,14 +1,14 @@
 import numpy as np
 import pytest
 
-from vampyr import vampyr1d as vp
+import vampyr as vp
 
 epsilon = 1.0e-3
 
 D = 1
 k = 5
 N = -2
-world = vp.BoundingBox(scale=N)
+world = vp.BoundingBox(dim=1, scale=N)
 mra = vp.MultiResolutionAnalysis(box=world, order=k)
 
 r0 = [0.8]
@@ -20,8 +20,8 @@ ffunc = vp.GaussFunc(alpha=alpha, beta=beta, position=r0)
 def test_GaussKernel():
     beta = 1.0e5
     alpha = (beta / np.pi) ** (1.0 / 2.0)
-    ifunc = vp.GaussFunc(alpha=alpha, beta=beta)
-    iexp = vp.GaussExp()
+    ifunc = vp.GaussFunc(alpha=alpha, beta=beta, dim=1)
+    iexp = vp.GaussExp(dim=1)
     iexp.append(ifunc)
     I = vp.ConvolutionOperator(mra, iexp, prec=epsilon)
 
@@ -53,7 +53,7 @@ def test_Identity():
 
 
 def test_PeriodicIdentity():
-    world = vp.BoundingBox(pbc=True)
+    world = vp.BoundingBox(dim=1, pbc=True)
     pbc = vp.MultiResolutionAnalysis(box=world, order=k)
 
     pfunc = ffunc.periodify([1.0])
@@ -68,7 +68,7 @@ def test_PeriodicIdentity():
 
 
 def test_PeriodicIdentity():
-    world = vp.BoundingBox(pbc=True, corner=[-1], nboxes=[2])
+    world = vp.BoundingBox(dim=1, pbc=True, corner=[-1], nboxes=[2])
     pbc = vp.MultiResolutionAnalysis(box=world, order=k)
 
     pfunc = ffunc.periodify([1.0])

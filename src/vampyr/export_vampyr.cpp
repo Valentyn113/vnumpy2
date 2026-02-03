@@ -43,31 +43,24 @@ void constants(py::module &m) {
 }
 
 template <int D> void bind_advanced(py::module &mod) noexcept {
-    py::module sub_mod = mod.def_submodule("advanced");
-
-    advanced_applys<D>(sub_mod);
-    advanced_arithmetics<D>(sub_mod);
-    advanced_project<D>(sub_mod);
-    advanced_grids<D>(sub_mod);
-    advanced_map<D>(sub_mod);
+    advanced_applys<D>(mod);
+    advanced_arithmetics<D>(mod);
+    advanced_project<D>(mod);
+    advanced_grids<D>(mod);
+    advanced_map<D>(mod);
 }
 
 template <int D> void bind_vampyr(py::module &mod) noexcept {
-    std::string name = "vampyr" + std::to_string(D) + "d";
-    py::module sub_mod = mod.def_submodule(name.c_str());
-
-    functions<D>(sub_mod);
-    trees<D>(sub_mod);
-    world<D>(sub_mod);
-    grids<D>(sub_mod);
-    applys<D>(sub_mod);
-    arithmetics<D>(sub_mod);
-    project<D>(sub_mod);
-    map<D>(sub_mod);
-    derivatives<D>(sub_mod);
-    convolutions<D>(sub_mod);
-
-    bind_advanced<D>(sub_mod);
+    functions<D>(mod);
+    trees<D>(mod);
+    world<D>(mod);
+    grids<D>(mod);
+    applys<D>(mod);
+    arithmetics<D>(mod);
+    project<D>(mod);
+    map<D>(mod);
+    derivatives<D>(mod);
+    convolutions<D>(mod);
 }
 
 PYBIND11_MODULE(_vampyr, m) {
@@ -90,10 +83,17 @@ PYBIND11_MODULE(_vampyr, m) {
     // Dimension-independent bindings go in the main module
     constants(m);
 
-    // Dimension-dependent bindings go into submodules
+    // Dimension-dependent bindings go into the main module
     bind_vampyr<1>(m);
     bind_vampyr<2>(m);
     bind_vampyr<3>(m);
+
+    // Advanced bindings go into a single "advanced" submodule
+    py::module advanced_mod = m.def_submodule("advanced");
+    bind_advanced<1>(advanced_mod);
+    bind_advanced<2>(advanced_mod);
+    bind_advanced<3>(advanced_mod);
+
     bases(m);
     filter(m);
 }

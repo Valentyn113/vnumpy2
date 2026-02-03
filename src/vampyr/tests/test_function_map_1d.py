@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from vampyr import vampyr1d as vp
+import vampyr as vp
 
 L = 1
 k = 5

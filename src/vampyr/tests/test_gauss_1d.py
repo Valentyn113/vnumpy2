@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from vampyr import vampyr1d as vp
+import vampyr as vp
 
 numprec = 1.0e-10
 
@@ -49,20 +49,20 @@ def test_GaussOverlap():
 
 def test_GaussNorm():
     beta = 10.0
-    f = vp.GaussFunc(beta=beta)
+    f = vp.GaussFunc(beta=beta, dim=1)
     ref = (np.pi / (2.0 * beta)) ** (1.0 / 2.0)
     assert f.squaredNorm() == pytest.approx(ref, rel=numprec)
     assert f.squaredNorm() == f.overlap(f)
 
 
-def test_GaussExp():
+def test_GaussExp(dim=1):
     b0 = 10.0
     b1 = 20.0
     r0 = [0.1]
     r1 = [-0.1]
     f0 = vp.GaussFunc(beta=b0, position=r0)
     f1 = vp.GaussFunc(beta=b1, position=r1)
-    fexp = vp.GaussExp()
+    fexp = vp.GaussExp(dim=1)
     fexp.append(f0)
     fexp.append(f1)
     ref = f0(r0) + f1(r0)
@@ -79,7 +79,7 @@ def test_GaussExpNorm():
     r1 = [-0.1]
     f0 = vp.GaussFunc(beta=b0, position=r0)
     f1 = vp.GaussFunc(beta=b1, position=r1)
-    fexp = vp.GaussExp()
+    fexp = vp.GaussExp(dim=1)
     fexp.append(f0)
     fexp.append(f1)
     ref = f0.squaredNorm() + 2.0 * f0.overlap(f1) + f1.squaredNorm()
@@ -94,7 +94,7 @@ def test_GaussExpDerivative():
     r2 = [0.0]
     f0 = vp.GaussFunc(beta=b0, position=r0)
     f1 = vp.GaussFunc(beta=b1, position=r1)
-    fexp = vp.GaussExp()
+    fexp = vp.GaussExp(dim=1)
     fexp.append(f0)
     fexp.append(f1)
     df0 = f0.differentiate(dir=0)

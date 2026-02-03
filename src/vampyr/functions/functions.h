@@ -13,7 +13,7 @@ template <int D> void functions(pybind11::module &m) {
 
     // RepresentableFunction class
     py::class_<RepresentableFunction<D, double>, PyRepresentableFunction<D>>(m,
-                                                                     "RepresentableFunction",
+                                                                     ("RepresentableFunction" + std::to_string(D) + "D").c_str(),
                                                                      R"mydelimiter(
        Filler text
     )mydelimiter")

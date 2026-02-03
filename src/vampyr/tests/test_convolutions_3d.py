@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 
-from vampyr import vampyr1d as vp1
-from vampyr import vampyr3d as vp
+import vampyr as vp
 
 epsilon = 1.0e-3
 mu = epsilon / 10
@@ -10,7 +9,7 @@ mu = epsilon / 10
 D = 3
 k = 5
 N = -2
-world = vp.BoundingBox(scale=N)
+world = vp.BoundingBox(dim=3, scale=N)
 mra = vp.MultiResolutionAnalysis(box=world, order=k)
 
 r0 = [0.8, 0.8, 0.8]
@@ -27,8 +26,8 @@ vp.advanced.project(prec=epsilon, out=ftree, inp=ffunc)
 def test_GaussKernel():
     b = 1.0e4
     a = (b / np.pi) ** (D / 2.0)
-    ifunc = vp1.GaussFunc(alpha=a, beta=b)
-    iexp = vp1.GaussExp()
+    ifunc = vp.GaussFunc(alpha=a, beta=b, dim=1)
+    iexp = vp.GaussExp(dim=1)
     iexp.append(ifunc)
     I = vp.ConvolutionOperator(mra, iexp, prec=epsilon)
 
@@ -47,8 +46,8 @@ def test_GaussKernel():
 def test_CartesianConvolution():
     b = 1.0e4
     a = (b / np.pi) ** (D / 2.0)
-    ifunc = vp1.GaussFunc(alpha=a, beta=b)
-    iexp = vp1.GaussExp()
+    ifunc = vp.GaussFunc(alpha=a, beta=b, dim=1)
+    iexp = vp.GaussExp(dim=1)
     iexp.append(ifunc)
     O = vp.CartesianConvolution(mra, iexp, prec=epsilon)
     O.setCartesianComponents(0, 0, 0)
@@ -99,7 +98,7 @@ def test_Helmholtz():
 
 
 def test_PeriodicIdentity():
-    world = vp.BoundingBox(pbc=True, corner=[-1, -1, -1], nboxes=[2, 2, 2])
+    world = vp.BoundingBox(dim=3, pbc=True, corner=[-1, -1, -1], nboxes=[2, 2, 2])
     pbc = vp.MultiResolutionAnalysis(box=world, order=k)
 
     pfunc = ffunc.periodify([1.0, 1.0, 1.0])

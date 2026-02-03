@@ -1,6 +1,6 @@
 import pytest
 
-from vampyr import vampyr3d as vp
+import vampyr as vp
 
 
 def test_ScalingProjector():

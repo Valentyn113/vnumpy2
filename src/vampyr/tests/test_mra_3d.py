@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 from vampyr import InterpolatingBasis, LegendreBasis
-from vampyr import vampyr3d as vp
+import vampyr as vp
 
 
 def test_BoundingBox():
@@ -46,7 +46,7 @@ def test_PeriodicBox():
 def test_MRA():
     legendre = LegendreBasis(order=5)
     interpol = InterpolatingBasis(order=5)
-    world = vp.BoundingBox(scale=-1)
+    world = vp.BoundingBox(dim=3, scale=-1)
     mra = vp.MultiResolutionAnalysis(box=world, basis=interpol, max_depth=20)
     assert mra == vp.MultiResolutionAnalysis(box=world, order=5, max_depth=20)
     assert mra == vp.MultiResolutionAnalysis(box=world, basis=interpol, max_depth=20)

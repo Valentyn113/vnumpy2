@@ -14,7 +14,7 @@ template <int D> void derivatives(pybind11::module &m) {
     using namespace pybind11::literals;
 
     py::class_<DerivativeOperator<D>>(m,
-                                      "DerivativeOperator",
+                                      (std::string("DerivativeOperator") + std::to_string(D) + "D").c_str(),
                                       // clang-format off
     R"mydelimiter(
         An abstract base class for derivative operators
@@ -33,7 +33,7 @@ template <int D> void derivatives(pybind11::module &m) {
             "axis"_a = 0);
 
     py::class_<ABGVOperator<D>, DerivativeOperator<D>>(m,
-                                                       "ABGVDerivative",
+                                                       (std::string("ABGVDerivative") + std::to_string(D) + "D").c_str(),
                                                        // clang-format off
     R"mydelimiter(
         ABGV derivative operator. :cite:`Alpert2002-sr`.
@@ -41,11 +41,11 @@ template <int D> void derivatives(pybind11::module &m) {
         // clang-format on
         .def(py::init<const MultiResolutionAnalysis<D> &, double, double>(), "mra"_a, "a"_a, "b"_a);
 
-    py::class_<PHOperator<D>, DerivativeOperator<D>>(m, "PHDerivative")
+    py::class_<PHOperator<D>, DerivativeOperator<D>>(m, (std::string("PHDerivative") + std::to_string(D) + "D").c_str())
         .def(py::init<const MultiResolutionAnalysis<D> &, int>(), "mra"_a, "order"_a = 1);
 
     py::class_<BSOperator<D>, DerivativeOperator<D>>(m,
-                                                     "BSDerivative",
+                                                     (std::string("BSDerivative") + std::to_string(D) + "D").c_str(),
                                                      // clang-format off
     R"mydelimiter(
         B-spline derivative operator. :cite:`Anderson2019-bx`.

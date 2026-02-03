@@ -11,7 +11,7 @@ template <int D> void map(pybind11::module &m) {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    py::class_<PyFunctionMap<D>>(m, "FunctionMap")
+    py::class_<PyFunctionMap<D>>(m, (std::string("FunctionMap") + std::to_string(D) + "D").c_str())
         .def(py::init<std::function<double(double)>, double>(), "fmap"_a, "prec"_a)
         .def(
             "__call__",

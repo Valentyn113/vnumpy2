@@ -107,7 +107,7 @@ template <int D> void trees(pybind11::module &m) {
     namespace py = pybind11;
     using namespace pybind11::literals;
 
-    py::class_<MWTree<D, double>>(m, "MWTree")
+    py::class_<MWTree<D, double>>(m, (std::string("MWTree") + std::to_string(D) + "D").c_str())
         .def("MRA", &MWTree<D, double>::getMRA, py::return_value_policy::reference_internal)
         .def("nNodes", &MWTree<D, double>::getNNodes)
         .def("nEndNodes", &MWTree<D, double>::getNEndNodes)
@@ -143,7 +143,7 @@ template <int D> void trees(pybind11::module &m) {
             return os.str();
         });
 
-    py::class_<FunctionTree<D, double>, MWTree<D, double>, RepresentableFunction<D, double>>(m, "FunctionTree")
+    py::class_<FunctionTree<D, double>, MWTree<D, double>, RepresentableFunction<D, double>>(m, (std::string("FunctionTree") + std::to_string(D) + "D").c_str())
         .def(py::init<const MultiResolutionAnalysis<D> &, const std::string &>(), "mra"_a, "name"_a = "nn")
         .def("nGenNodes", &FunctionTree<D, double>::getNGenNodes)
         .def("deleteGenerated", &FunctionTree<D, double>::deleteGenerated)
@@ -194,7 +194,7 @@ template <int D> void trees(pybind11::module &m) {
         .def("__pow__", &impl__pow__<D>, py::is_operator())
         .def("__ipow__", &impl__pow__<D>, py::is_operator());
 
-    py::class_<MWNode<D, double>>(m, "MWNode")
+    py::class_<MWNode<D, double>>(m, (std::string("MWNode") + std::to_string(D) + "D").c_str())
         .def("depth", &MWNode<D, double>::getDepth)
         .def("scale", &MWNode<D, double>::getScale)
         .def("nCoefs", &MWNode<D, double>::getNCoefs)
@@ -228,10 +228,10 @@ template <int D> void trees(pybind11::module &m) {
             return os.str();
         });
 
-    py::class_<FunctionNode<D, double>, MWNode<D, double>, std::unique_ptr<FunctionNode<D, double>, py::nodelete>>(m, "FunctionNode")
+    py::class_<FunctionNode<D, double>, MWNode<D, double>, std::unique_ptr<FunctionNode<D, double>, py::nodelete>>(m, (std::string("FunctionNode") + std::to_string(D) + "D").c_str())
         .def("integrate", &FunctionNode<D, double>::integrate);
 
-    py::class_<NodeIndex<D>>(m, "NodeIndex")
+    py::class_<NodeIndex<D>>(m, (std::string("NodeIndex") + std::to_string(D) + "D").c_str())
         .def(py::init<int, const std::array<int, D>>(), "scale"_a = 0, "translation"_a = std::array<int, D>{})
         .def(py::self == py::self)
         .def(py::self != py::self)
@@ -248,7 +248,7 @@ template <int D> void trees(pybind11::module &m) {
             return os.str();
         });
 
-    py::class_<TreeIterator<D, double>>(m, "TreeIterator")
+    py::class_<TreeIterator<D, double>>(m, (std::string("TreeIterator") + std::to_string(D) + "D").c_str())
         .def(py::init<Traverse, Iterator>(), "traverse"_a = TopDown, "iterator"_a = Lebesgue)
         .def(py::init<MWTree<D, double> &, Traverse, Iterator>(), "tree"_a, "traverse"_a = TopDown, "iterator"_a = Lebesgue)
         .def("setReturnGenNodes", &TreeIterator<D, double>::setReturnGenNodes)

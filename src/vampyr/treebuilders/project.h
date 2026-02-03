@@ -20,7 +20,7 @@ template <int D> void project(pybind11::module &m) {
         "mra"_a,
         "name"_a = "nn");
 
-    py::class_<PyScalingProjector<D>>(m, "ScalingProjector")
+    py::class_<PyScalingProjector<D>>(m, (std::string("ScalingProjector") + std::to_string(D) + "D").c_str())
         .def(py::init<const MultiResolutionAnalysis<D> &, double>(), "mra"_a, "prec"_a)
         .def(py::init<const MultiResolutionAnalysis<D> &, int>(), "mra"_a, "scale"_a)
         .def(
@@ -47,7 +47,7 @@ template <int D> void project(pybind11::module &m) {
             },
             "func"_a);
 
-    py::class_<PyWaveletProjector<D>>(m, "WaveletProjector")
+    py::class_<PyWaveletProjector<D>>(m, (std::string("WaveletProjector") + std::to_string(D) + "D").c_str())
         .def(py::init<const MultiResolutionAnalysis<D> &, int>(), "mra"_a, "scale"_a)
         .def(
             "__call__", [](PyWaveletProjector<D> &P, RepresentableFunction<D, double> &func) { return P(func); }, "func"_a)

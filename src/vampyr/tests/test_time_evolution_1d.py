@@ -1,4 +1,4 @@
-from vampyr import vampyr1d as vp1
+import vampyr as vp1
 import numpy as np
 import pytest
 
@@ -17,18 +17,18 @@ finest_scale = 8
 
 from vampyr import LegendreBasis
 lbasis = LegendreBasis(order=order)
-box = vp1.BoundingBox(0)
-mra = vp1.MultiResolutionAnalysis(box, lbasis) 
+box = vp1.BoundingBox(0, dim=1)
+mra = vp1.MultiResolutionAnalysis(box, lbasis)
 
 # Make the scaling projector
 P = vp1.ScalingProjector(mra, prec = precision)
 
 # Make the Schrodinger free-particle semigroup operator
 imaginary = False
-real_semigroup_operator = vp1.TimeEvolutionOperator(mra, precision, time, 
+real_semigroup_operator = vp1.TimeEvolutionOperator(mra, precision, time,
 finest_scale, imaginary)
 imaginary = True
-imag_semigroup_operator = vp1.TimeEvolutionOperator(mra, precision, time, 
+imag_semigroup_operator = vp1.TimeEvolutionOperator(mra, precision, time,
 finest_scale, imaginary)
 
 def free_particle_analytical_solution(x, x0, t, sigma):

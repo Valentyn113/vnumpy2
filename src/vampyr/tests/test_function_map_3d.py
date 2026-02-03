@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 
-from vampyr import vampyr3d as vp
+import vampyr as vp
 
 L = 1
 k = 5
 epsilon = 1.0e-3
-mra = vp.MultiResolutionAnalysis(box=[-L, L], order=k)
+mra = vp.MultiResolutionAnalysis(dim=3, box=[-L, L], order=k)
 
 
 def f(x):

@@ -1,5 +1,5 @@
 from vampyr import BottomUp, Hilbert, Lebesgue, TopDown
-from vampyr import vampyr3d as vp
+import vampyr as vp
 
 r0 = [0.1, 0.1, 0.1]
 r1 = [-0.1, -0.1, -0.1]
@@ -13,8 +13,8 @@ name = "func"
 two_d = 2**D
 kp1_d = (k + 1) ** D
 
-world = vp.BoundingBox(scale=N)
-root = vp.NodeIndex(scale=N)
+world = vp.BoundingBox(dim=3, scale=N)
+root = vp.NodeIndex(scale=N, dim=3)
 idx = vp.NodeIndex(scale=n, translation=l)
 mra = vp.MultiResolutionAnalysis(box=world, order=k)
 tree = vp.FunctionTree(mra, name)
@@ -180,7 +180,7 @@ def test_LebesgueIterator():
     tree.setZero()
     tree.fetchNode(idx)  # generate extra nodes
 
-    it = vp.TreeIterator(traverse=BottomUp)
+    it = vp.TreeIterator(traverse=BottomUp, dim=3)
     it.setMaxDepth(-1)
     it.setIterator(Lebesgue)
     it.setReturnGenNodes(True)

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from vampyr import vampyr1d as vp
+import vampyr as vp
 
 epsilon = 1.0e-3
 
@@ -9,7 +9,7 @@ D = 1
 s = 2
 k = 5
 N = -2
-world = vp.BoundingBox(scale=N)
+world = vp.BoundingBox(dim=1, scale=N)
 mra = vp.MultiResolutionAnalysis(box=world, order=k)
 
 r0 = [0.8]
@@ -158,8 +158,8 @@ def test_BuildProjectSemiPeriodicGauss():
     assert tree_2.integrate() == pytest.approx(1.0, rel=epsilon)
 
 
-def test_BuildProjectSemiPeriodicGaussExp():
-    gexp = vp.GaussExp()
+def test_BuildProjectSemiPeriodicGaussExp(dim=1):
+    gexp = vp.GaussExp(dim=1)
     gexp.append(gauss)
     gexp.append(gauss)
 
