@@ -1,5 +1,8 @@
 #pragma once
 
+#include <complex>
+
+#include <pybind11/complex.h>
 #include <pybind11/pybind11.h>
 
 #include <MRCPP/operators/ABGVOperator.h>
@@ -7,6 +10,8 @@
 #include <MRCPP/operators/PHOperator.h>
 
 namespace vampyr {
+
+using ComplexDouble = std::complex<double>;
 
 template <int D> void derivatives(pybind11::module &m) {
     using namespace mrcpp;
@@ -22,10 +27,21 @@ template <int D> void derivatives(pybind11::module &m) {
         // clang-format on
         .def(py::init<const MultiResolutionAnalysis<D> &, int, int>(), "mra"_a, "root"_a, "reach"_a)
         .def("getOrder", &DerivativeOperator<D>::getOrder)
+        // Real tree __call__
         .def(
             "__call__",
             [](DerivativeOperator<D> &oper, FunctionTree<D, double> *inp, int axis) {
                 auto out = std::make_unique<FunctionTree<D, double>>(inp->getMRA());
+                apply(*out, oper, *inp, axis);
+                return out;
+            },
+            "inp"_a,
+            "axis"_a = 0)
+        // Complex tree __call__
+        .def(
+            "__call__",
+            [](DerivativeOperator<D> &oper, FunctionTree<D, ComplexDouble> *inp, int axis) {
+                auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp->getMRA());
                 apply(*out, oper, *inp, axis);
                 return out;
             },

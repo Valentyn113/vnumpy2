@@ -497,3 +497,222 @@ class TestComplexConversion:
 
         assert reconstructed_val.real == pytest.approx(original_val.real, rel=1e-3)
         assert reconstructed_val.imag == pytest.approx(original_val.imag, rel=1e-3)
+
+
+class TestComplexOperators:
+    """Tests for complex operator application."""
+
+    def test_derivative_operator_on_complex_tree_1d(self):
+        """Test applying derivative operator to a 1D complex tree."""
+        P = vp.ScalingProjector(mra_1d, prec=1e-4, dtype=complex)
+        D = vp.ABGVDerivative(mra_1d, a=0.5, b=0.5)
+
+        # f(x) = (1 + 2j) * x^2
+        # f'(x) = (1 + 2j) * 2x = (2 + 4j) * x
+        def complex_func(r):
+            return (1.0 + 2.0j) * r[0] ** 2
+
+        f = P(complex_func)
+        assert f.dtype == "complex128"
+
+        # Apply derivative using __call__
+        df = D(f, axis=0)
+        assert df.dtype == "complex128"
+
+        # Check value at x=0.5: should be (2 + 4j) * 0.5 = 1 + 2j
+        r = [0.5]
+        df_val = df(r)
+        expected = (2.0 + 4.0j) * 0.5
+        assert df_val.real == pytest.approx(expected.real, rel=1e-3)
+        assert df_val.imag == pytest.approx(expected.imag, rel=1e-3)
+
+    def test_derivative_operator_on_complex_tree_3d(self):
+        """Test applying derivative operator to a 3D complex tree."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+        D = vp.ABGVDerivative(mra_3d, a=0.5, b=0.5)
+
+        # f(x,y,z) = (1 + 1j) * x * y
+        # df/dx = (1 + 1j) * y
+        def complex_func(r):
+            return (1.0 + 1.0j) * r[0] * r[1]
+
+        f = P(complex_func)
+        df_dx = D(f, axis=0)
+
+        assert df_dx.dtype == "complex128"
+
+        # Check at (0.3, 0.4, 0.1): df/dx = (1+1j) * 0.4
+        r = [0.3, 0.4, 0.1]
+        expected = (1.0 + 1.0j) * 0.4
+        df_val = df_dx(r)
+        assert df_val.real == pytest.approx(expected.real, rel=1e-2)
+        assert df_val.imag == pytest.approx(expected.imag, rel=1e-2)
+
+    def test_gradient_complex_3d(self):
+        """Test gradient of a 3D complex tree."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+        D = vp.ABGVDerivative(mra_3d, a=0.0, b=0.0)
+
+        # f(x,y,z) = (1 + 2j) * (x + 2*y + 3*z)
+        # grad f = (1+2j, 2+4j, 3+6j)
+        def complex_func(r):
+            return (1.0 + 2.0j) * (r[0] + 2.0 * r[1] + 3.0 * r[2])
+
+        f = P(complex_func)
+        grad_f = vp.gradient(oper=D, inp=f)
+
+        assert len(grad_f) == 3
+        for component in grad_f:
+            assert component.dtype == "complex128"
+
+        r = [0.1, 0.2, 0.3]
+
+        # df/dx = 1 + 2j
+        gx_val = grad_f[0](r)
+        assert gx_val.real == pytest.approx(1.0, rel=1e-2)
+        assert gx_val.imag == pytest.approx(2.0, rel=1e-2)
+
+        # df/dy = 2 + 4j
+        gy_val = grad_f[1](r)
+        assert gy_val.real == pytest.approx(2.0, rel=1e-2)
+        assert gy_val.imag == pytest.approx(4.0, rel=1e-2)
+
+        # df/dz = 3 + 6j
+        gz_val = grad_f[2](r)
+        assert gz_val.real == pytest.approx(3.0, rel=1e-2)
+        assert gz_val.imag == pytest.approx(6.0, rel=1e-2)
+
+    def test_divergence_complex_3d(self):
+        """Test divergence of complex vector field."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+        D = vp.ABGVDerivative(mra_3d, a=0.0, b=0.0)
+
+        # F = ((1+j)*x, (2+j)*y, (3+j)*z)
+        # div F = (1+j) + (2+j) + (3+j) = 6 + 3j
+        def f_x(r):
+            return (1.0 + 1.0j) * r[0]
+
+        def f_y(r):
+            return (2.0 + 1.0j) * r[1]
+
+        def f_z(r):
+            return (3.0 + 1.0j) * r[2]
+
+        Fx = P(f_x)
+        Fy = P(f_y)
+        Fz = P(f_z)
+
+        div_F = vp.divergence(oper=D, inp=[Fx, Fy, Fz])
+        assert div_F is not None
+        assert div_F.dtype == "complex128"
+
+        r = [0.1, 0.2, 0.3]
+        div_val = div_F(r)
+        # div F = 6 + 3j (constant)
+        assert div_val.real == pytest.approx(6.0, rel=1e-2)
+        assert div_val.imag == pytest.approx(3.0, rel=1e-2)
+
+    def test_ph_derivative_complex(self):
+        """Test PH derivative on complex tree."""
+        P = vp.ScalingProjector(mra_1d, prec=1e-4, dtype=complex)
+        D = vp.PHDerivative(mra_1d, order=1)
+
+        def complex_func(r):
+            return (1.0 + 1.0j) * r[0] ** 2
+
+        f = P(complex_func)
+        df = D(f, axis=0)
+
+        assert df.dtype == "complex128"
+
+        # df/dx at x=0.3 should be (2 + 2j) * 0.3 = 0.6 + 0.6j
+        r = [0.3]
+        df_val = df(r)
+        expected = (2.0 + 2.0j) * 0.3
+        assert df_val.real == pytest.approx(expected.real, rel=1e-2)
+        assert df_val.imag == pytest.approx(expected.imag, rel=1e-2)
+
+    def test_bs_derivative_complex(self):
+        """Test BS derivative on complex tree."""
+        P = vp.ScalingProjector(mra_1d, prec=1e-4, dtype=complex)
+        D = vp.BSDerivative(mra_1d, order=1)
+
+        def complex_func(r):
+            return (1.0 + 1.0j) * r[0] ** 2
+
+        f = P(complex_func)
+        df = D(f, axis=0)
+
+        assert df.dtype == "complex128"
+
+        # df/dx at x=0.3 should be (2 + 2j) * 0.3 = 0.6 + 0.6j
+        # Note: BS derivative has slightly lower accuracy, use looser tolerance
+        r = [0.3]
+        df_val = df(r)
+        expected = (2.0 + 2.0j) * 0.3
+        assert df_val.real == pytest.approx(expected.real, rel=0.05)
+        assert df_val.imag == pytest.approx(expected.imag, rel=0.05)
+
+    def test_advanced_apply_derivative_complex(self):
+        """Test advanced.apply with derivative operator on complex tree."""
+        P = vp.ScalingProjector(mra_1d, prec=1e-4, dtype=complex)
+        D = vp.ABGVDerivative(mra_1d, a=0.5, b=0.5)
+
+        def complex_func(r):
+            return (1.0 + 2.0j) * r[0] ** 2
+
+        f = P(complex_func)
+        df = vp.FunctionTree(mra_1d, dtype=complex)
+
+        vp.advanced.apply(out=df, oper=D, inp=f, dir=0)
+
+        assert df.dtype == "complex128"
+
+        r = [0.5]
+        df_val = df(r)
+        expected = (2.0 + 4.0j) * 0.5
+        assert df_val.real == pytest.approx(expected.real, rel=1e-3)
+        assert df_val.imag == pytest.approx(expected.imag, rel=1e-3)
+
+    def test_convolution_operator_complex_3d(self):
+        """Test applying convolution operator to complex tree."""
+        import numpy as np
+
+        # Create a Gaussian convolution kernel
+        epsilon = 1e-3
+        a = 10.0
+        b = np.sqrt(a / np.pi) ** 3
+
+        # Create identity convolution approximation
+        ifunc = vp.GaussFunc(alpha=a, beta=b, dim=1)
+        iexp = vp.GaussExp(dim=1)
+        iexp.append(ifunc)
+        I = vp.ConvolutionOperator(mra_3d, iexp, prec=epsilon)
+
+        # Create complex input
+        P = vp.ScalingProjector(mra_3d, prec=epsilon, dtype=complex)
+
+        def complex_func(r):
+            return (1.0 + 0.5j) * np.exp(-a * (r[0]**2 + r[1]**2 + r[2]**2))
+
+        f = P(complex_func)
+        g = vp.FunctionTree(mra_3d, dtype=complex)
+
+        # Apply convolution
+        vp.advanced.apply(prec=epsilon, out=g, oper=I, inp=f)
+
+        # Verify the result is complex
+        assert g.dtype == "complex128"
+
+        # Verify the result has non-zero values (convolution produced something)
+        g_integral = g.integrate()
+        assert isinstance(g_integral, complex)
+        assert g_integral != 0.0 + 0.0j
+
+        # Verify the imaginary/real ratio is preserved approximately
+        # (convolution is a linear operation)
+        f_integral = f.integrate()
+        if abs(f_integral.real) > 1e-10:
+            ratio_f = f_integral.imag / f_integral.real
+            ratio_g = g_integral.imag / g_integral.real
+            assert ratio_g == pytest.approx(ratio_f, rel=0.2)
