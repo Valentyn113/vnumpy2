@@ -1,14 +1,29 @@
-"""Tests for complex number support in VAMPyR (Phase 1: FunctionTree3D_Complex)."""
+"""Tests for complex number support in VAMPyR."""
 
+import pytest
 import vampyr as vp
 
 
-# Test setup
-D = 3
+# Test setup for different dimensions
 k = 5
 N = -1
-world = vp.BoundingBox(dim=D, scale=N)
-mra = vp.MultiResolutionAnalysis(box=world, order=k)
+
+# 1D setup
+world_1d = vp.BoundingBox(dim=1, scale=N)
+mra_1d = vp.MultiResolutionAnalysis(box=world_1d, order=k)
+
+# 2D setup
+world_2d = vp.BoundingBox(dim=2, scale=N)
+mra_2d = vp.MultiResolutionAnalysis(box=world_2d, order=k)
+
+# 3D setup
+world_3d = vp.BoundingBox(dim=3, scale=N)
+mra_3d = vp.MultiResolutionAnalysis(box=world_3d, order=k)
+
+# For backwards compatibility with existing tests
+D = 3
+world = world_3d
+mra = mra_3d
 
 
 def test_create_complex_function_tree():
@@ -98,3 +113,89 @@ def test_complex_tree_clear():
 
     tree.clear()
     assert tree.squaredNorm() < 0.0  # Undefined state
+
+
+class TestComplex1D:
+    """Tests for 1D complex FunctionTree."""
+
+    def test_create_complex_tree_1d(self):
+        """Test creating a 1D complex FunctionTree."""
+        tree = vp.FunctionTree(mra_1d, dtype=complex)
+        assert tree.dtype == "complex128"
+        assert tree.is_complex is True
+
+    def test_complex_tree_1d_basic_operations(self):
+        """Test basic operations on 1D complex tree."""
+        tree = vp.FunctionTree(mra_1d, dtype=complex)
+        tree.setZero()
+
+        assert tree.squaredNorm() == 0.0
+        assert tree.integrate() == 0.0 + 0.0j
+
+        r = [0.1]
+        assert tree(r) == 0.0 + 0.0j
+
+    def test_complex_tree_1d_nodes(self):
+        """Test node access on 1D complex tree."""
+        tree = vp.FunctionTree(mra_1d, dtype=complex)
+        tree.setZero()
+
+        assert tree.nRootNodes() >= 1
+        root = tree.fetchRootNode(0)
+        assert root.isRootNode()
+        assert root.hasCoefs()
+
+
+class TestComplex2D:
+    """Tests for 2D complex FunctionTree."""
+
+    def test_create_complex_tree_2d(self):
+        """Test creating a 2D complex FunctionTree."""
+        tree = vp.FunctionTree(mra_2d, dtype=complex)
+        assert tree.dtype == "complex128"
+        assert tree.is_complex is True
+
+    def test_complex_tree_2d_basic_operations(self):
+        """Test basic operations on 2D complex tree."""
+        tree = vp.FunctionTree(mra_2d, dtype=complex)
+        tree.setZero()
+
+        assert tree.squaredNorm() == 0.0
+        assert tree.integrate() == 0.0 + 0.0j
+
+        r = [0.1, 0.1]
+        assert tree(r) == 0.0 + 0.0j
+
+    def test_complex_tree_2d_nodes(self):
+        """Test node access on 2D complex tree."""
+        tree = vp.FunctionTree(mra_2d, dtype=complex)
+        tree.setZero()
+
+        assert tree.nRootNodes() >= 1
+        root = tree.fetchRootNode(0)
+        assert root.isRootNode()
+        assert root.hasCoefs()
+
+
+class TestComplex3D:
+    """Tests for 3D complex FunctionTree (extended)."""
+
+    def test_complex_tree_3d_nodes(self):
+        """Test node access on 3D complex tree."""
+        tree = vp.FunctionTree(mra_3d, dtype=complex)
+        tree.setZero()
+
+        assert tree.nRootNodes() >= 1
+        root = tree.fetchRootNode(0)
+        assert root.isRootNode()
+        assert root.hasCoefs()
+        assert root.squaredNorm() == 0.0
+
+    def test_complex_tree_3d_fetch_node(self):
+        """Test fetching nodes by index on 3D complex tree."""
+        tree = vp.FunctionTree(mra_3d, dtype=complex)
+        tree.setZero()
+
+        idx = vp.NodeIndex(scale=N, dim=3)
+        node = tree.fetchNode(idx)
+        assert node is not None

@@ -286,65 +286,110 @@ template <int D> void trees(pybind11::module &m) {
         .def("init", &TreeIterator<D, double>::init)
         .def("next", &TreeIterator<D, double>::next);
 
-    // Complex FunctionTree bindings (Phase 1: 3D only)
-    if constexpr (D == 3) {
-        // MWTree for complex numbers
-        py::class_<MWTree<D, ComplexDouble>>(m, "MWTree3D_Complex")
-            .def("MRA", &MWTree<D, ComplexDouble>::getMRA, py::return_value_policy::reference_internal)
-            .def("nNodes", &MWTree<D, ComplexDouble>::getNNodes)
-            .def("nEndNodes", &MWTree<D, ComplexDouble>::getNEndNodes)
-            .def("nRootNodes", &MWTree<D, ComplexDouble>::getNRootNodes)
-            .def("rootScale", &MWTree<D, ComplexDouble>::getRootScale)
-            .def("depth", &MWTree<D, ComplexDouble>::getDepth)
-            .def("setZero",
-                 [](MWTree<D, ComplexDouble> *out) {
-                     out->setZero();
-                     return out;
-                 })
-            .def("clear", &MWTree<D, ComplexDouble>::clear)
-            .def("setName", &MWTree<D, ComplexDouble>::setName)
-            .def("name", &MWTree<D, ComplexDouble>::getName)
-            .def("squaredNorm", &MWTree<D, ComplexDouble>::getSquareNorm)
-            .def("norm",
-                 [](MWTree<D, ComplexDouble> &tree) {
-                     auto sqNorm = tree.getSquareNorm();
-                     return (sqNorm >= 0.0) ? std::sqrt(sqNorm) : -1.0;
-                 })
-            .def("__str__", [](MWTree<D, ComplexDouble> &tree) {
-                std::ostringstream os;
-                os << tree;
-                return os.str();
-            });
+    // Complex MWTree bindings (all dimensions)
+    py::class_<MWTree<D, ComplexDouble>>(m, (std::string("MWTree") + std::to_string(D) + "D_Complex").c_str())
+        .def("MRA", &MWTree<D, ComplexDouble>::getMRA, py::return_value_policy::reference_internal)
+        .def("nNodes", &MWTree<D, ComplexDouble>::getNNodes)
+        .def("nEndNodes", &MWTree<D, ComplexDouble>::getNEndNodes)
+        .def("nRootNodes", &MWTree<D, ComplexDouble>::getNRootNodes)
+        .def("fetchEndNode",
+             [](MWTree<D, ComplexDouble>& tree, int i) -> MWNode<D, ComplexDouble>& { return tree.getEndMWNode(i); },
+             py::return_value_policy::reference_internal)
+        .def("fetchRootNode",
+             [](MWTree<D, ComplexDouble>& tree, int i) -> MWNode<D, ComplexDouble>& { return tree.getRootMWNode(i); },
+             py::return_value_policy::reference_internal)
+        .def("rootScale", &MWTree<D, ComplexDouble>::getRootScale)
+        .def("depth", &MWTree<D, ComplexDouble>::getDepth)
+        .def("setZero",
+             [](MWTree<D, ComplexDouble> *out) {
+                 out->setZero();
+                 return out;
+             })
+        .def("clear", &MWTree<D, ComplexDouble>::clear)
+        .def("setName", &MWTree<D, ComplexDouble>::setName)
+        .def("name", &MWTree<D, ComplexDouble>::getName)
+        .def("fetchNode",
+             [](MWTree<D, ComplexDouble>& tree, NodeIndex<D> idx) -> MWNode<D, ComplexDouble>& { return tree.getNode(idx); },
+             py::return_value_policy::reference_internal)
+        .def("squaredNorm", &MWTree<D, ComplexDouble>::getSquareNorm)
+        .def("norm",
+             [](MWTree<D, ComplexDouble> &tree) {
+                 auto sqNorm = tree.getSquareNorm();
+                 return (sqNorm >= 0.0) ? std::sqrt(sqNorm) : -1.0;
+             })
+        .def("__str__", [](MWTree<D, ComplexDouble> &tree) {
+            std::ostringstream os;
+            os << tree;
+            return os.str();
+        });
 
-        // FunctionTree for complex numbers
-        py::class_<FunctionTree<D, ComplexDouble>, MWTree<D, ComplexDouble>>(m, "FunctionTree3D_Complex")
-            .def(py::init<const MultiResolutionAnalysis<D> &, const std::string &>(), "mra"_a, "name"_a = "nn")
-            .def("nGenNodes", &FunctionTree<D, ComplexDouble>::getNGenNodes)
-            .def("deleteGenerated", &FunctionTree<D, ComplexDouble>::deleteGenerated)
-            .def("integrate", &FunctionTree<D, ComplexDouble>::integrate)
-            .def("normalize",
-                 [](FunctionTree<D, ComplexDouble> *out) {
-                     out->normalize();
-                     return out;
-                 })
-            .def(
-                "crop",
-                [](FunctionTree<D, ComplexDouble> *out, double prec, bool abs_prec) {
-                    out->crop(prec, 1.0, abs_prec);
-                    return out;
-                },
-                "prec"_a,
-                "abs_prec"_a = false)
-            .def("deepCopy",
-                 [](FunctionTree<D, ComplexDouble> *inp) {
-                     auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp->getMRA());
-                     copy_grid(*out, *inp);
-                     copy_func(*out, *inp);
-                     return out;
-                 })
-            .def("__call__", [](FunctionTree<D, ComplexDouble> &func, const Coord<D> &r) { return func.evalf_precise(r); })
-            .def_property_readonly("dtype", [](FunctionTree<D, ComplexDouble>&) { return "complex128"; })
-            .def_property_readonly("is_complex", [](FunctionTree<D, ComplexDouble>&) { return true; });
-    }
+    // Complex FunctionTree bindings (all dimensions)
+    py::class_<FunctionTree<D, ComplexDouble>, MWTree<D, ComplexDouble>>(m, (std::string("FunctionTree") + std::to_string(D) + "D_Complex").c_str())
+        .def(py::init<const MultiResolutionAnalysis<D> &, const std::string &>(), "mra"_a, "name"_a = "nn")
+        .def("nGenNodes", &FunctionTree<D, ComplexDouble>::getNGenNodes)
+        .def("deleteGenerated", &FunctionTree<D, ComplexDouble>::deleteGenerated)
+        .def("integrate", &FunctionTree<D, ComplexDouble>::integrate)
+        .def("normalize",
+             [](FunctionTree<D, ComplexDouble> *out) {
+                 out->normalize();
+                 return out;
+             })
+        .def(
+            "crop",
+            [](FunctionTree<D, ComplexDouble> *out, double prec, bool abs_prec) {
+                out->crop(prec, 1.0, abs_prec);
+                return out;
+            },
+            "prec"_a,
+            "abs_prec"_a = false)
+        .def("deepCopy",
+             [](FunctionTree<D, ComplexDouble> *inp) {
+                 auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp->getMRA());
+                 copy_grid(*out, *inp);
+                 copy_func(*out, *inp);
+                 return out;
+             })
+        .def("__call__", [](FunctionTree<D, ComplexDouble> &func, const Coord<D> &r) { return func.evalf_precise(r); })
+        .def_property_readonly("dtype", [](FunctionTree<D, ComplexDouble>&) { return "complex128"; })
+        .def_property_readonly("is_complex", [](FunctionTree<D, ComplexDouble>&) { return true; });
+
+    // Complex MWNode bindings (all dimensions)
+    py::class_<MWNode<D, ComplexDouble>>(m, (std::string("MWNode") + std::to_string(D) + "D_Complex").c_str())
+        .def("depth", &MWNode<D, ComplexDouble>::getDepth)
+        .def("scale", &MWNode<D, ComplexDouble>::getScale)
+        .def("nCoefs", &MWNode<D, ComplexDouble>::getNCoefs)
+        .def("nChildren", &MWNode<D, ComplexDouble>::getNChildren)
+        .def("index",
+             [](MWNode<D, ComplexDouble>& node) -> const NodeIndex<D>& { return node.getNodeIndex(); },
+             py::return_value_policy::reference_internal)
+        .def("norm",
+             [](MWNode<D, ComplexDouble> &node) {
+                 auto sqNorm = node.getSquareNorm();
+                 return (sqNorm >= 0.0) ? std::sqrt(sqNorm) : -1.0;
+             })
+        .def("squaredNorm", &MWNode<D, ComplexDouble>::getSquareNorm)
+        .def("scalingNorm", &MWNode<D, ComplexDouble>::getScalingNorm)
+        .def("waveletNorm", &MWNode<D, ComplexDouble>::getWaveletNorm)
+        .def("componentNorm", &MWNode<D, ComplexDouble>::getComponentNorm)
+        .def("isAllocated", &MWNode<D, ComplexDouble>::isAllocated)
+        .def("isRootNode", &MWNode<D, ComplexDouble>::isRootNode)
+        .def("isEndNode", &MWNode<D, ComplexDouble>::isEndNode)
+        .def("isLeafNode", &MWNode<D, ComplexDouble>::isLeafNode)
+        .def("isBranchNode", &MWNode<D, ComplexDouble>::isBranchNode)
+        .def("isGenNode", &MWNode<D, ComplexDouble>::isGenNode)
+        .def("hasParent", &MWNode<D, ComplexDouble>::hasParent)
+        .def("hasCoefs", &MWNode<D, ComplexDouble>::hasCoefs)
+        .def("center", &MWNode<D, ComplexDouble>::getCenter)
+        .def("upperBounds", &MWNode<D, ComplexDouble>::getUpperBounds)
+        .def("lowerBounds", &MWNode<D, ComplexDouble>::getLowerBounds)
+        .def("__str__", [](MWNode<D, ComplexDouble> &node) {
+            std::ostringstream os;
+            os << node;
+            return os.str();
+        });
+
+    // Complex FunctionNode bindings (all dimensions)
+    py::class_<FunctionNode<D, ComplexDouble>, MWNode<D, ComplexDouble>, std::unique_ptr<FunctionNode<D, ComplexDouble>, py::nodelete>>(m, (std::string("FunctionNode") + std::to_string(D) + "D_Complex").c_str())
+        .def("integrate", &FunctionNode<D, ComplexDouble>::integrate);
 }
 } // namespace vampyr

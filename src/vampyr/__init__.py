@@ -83,8 +83,8 @@ def FunctionTree(mra, *args, dtype=None, **kwargs):
     is_complex = dtype in (complex, 'complex', 'complex128')
 
     if is_complex:
-        if d == 1: raise NotImplementedError("Complex FunctionTree1D not yet implemented")
-        if d == 2: raise NotImplementedError("Complex FunctionTree2D not yet implemented")
+        if d == 1: return FunctionTree1D_Complex(mra, *args, **kwargs)
+        if d == 2: return FunctionTree2D_Complex(mra, *args, **kwargs)
         if d == 3: return FunctionTree3D_Complex(mra, *args, **kwargs)
     else:
         if d == 1: return FunctionTree1D(mra, *args, **kwargs)
