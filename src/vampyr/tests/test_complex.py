@@ -199,3 +199,106 @@ class TestComplex3D:
         idx = vp.NodeIndex(scale=N, dim=3)
         node = tree.fetchNode(idx)
         assert node is not None
+
+
+class TestComplexArithmetic:
+    """Tests for complex arithmetic operations."""
+
+    def test_complex_add(self):
+        """Test addition of two complex trees."""
+        tree_a = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_b = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_a.setZero()
+        tree_b.setZero()
+
+        result = tree_a + tree_b
+        assert result.dtype == "complex128"
+        assert result.squaredNorm() == 0.0
+
+    def test_complex_sub(self):
+        """Test subtraction of two complex trees."""
+        tree_a = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_b = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_a.setZero()
+        tree_b.setZero()
+
+        result = tree_a - tree_b
+        assert result.dtype == "complex128"
+        assert result.squaredNorm() == 0.0
+
+    def test_complex_mul_trees(self):
+        """Test multiplication of two complex trees."""
+        tree_a = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_b = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_a.setZero()
+        tree_b.setZero()
+
+        result = tree_a * tree_b
+        assert result.dtype == "complex128"
+
+    def test_complex_mul_scalar(self):
+        """Test multiplication of complex tree by complex scalar."""
+        tree = vp.FunctionTree(mra_3d, dtype=complex)
+        tree.setZero()
+
+        result = tree * (2.0 + 1.0j)
+        assert result.dtype == "complex128"
+
+        result2 = (2.0 + 1.0j) * tree
+        assert result2.dtype == "complex128"
+
+    def test_complex_div_scalar(self):
+        """Test division of complex tree by complex scalar."""
+        tree = vp.FunctionTree(mra_3d, dtype=complex)
+        tree.setZero()
+
+        result = tree / (2.0 + 1.0j)
+        assert result.dtype == "complex128"
+
+    def test_complex_neg(self):
+        """Test negation of complex tree."""
+        tree = vp.FunctionTree(mra_3d, dtype=complex)
+        tree.setZero()
+
+        result = -tree
+        assert result.dtype == "complex128"
+        assert result.squaredNorm() == 0.0
+
+    def test_complex_pos(self):
+        """Test positive copy of complex tree."""
+        tree = vp.FunctionTree(mra_3d, dtype=complex)
+        tree.setZero()
+
+        result = +tree
+        assert result.dtype == "complex128"
+        assert result.squaredNorm() == 0.0
+
+    def test_complex_dot(self):
+        """Test dot product of two complex trees."""
+        tree_a = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_b = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_a.setZero()
+        tree_b.setZero()
+
+        result = vp.dot(tree_a, tree_b)
+        assert result == 0.0 + 0.0j
+
+    def test_mixed_dot_real_complex(self):
+        """Test dot product of real and complex trees."""
+        tree_real = vp.FunctionTree(mra_3d)
+        tree_complex = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_real.setZero()
+        tree_complex.setZero()
+
+        result = vp.dot(tree_real, tree_complex)
+        assert result == 0.0 + 0.0j
+
+    def test_mixed_dot_complex_real(self):
+        """Test dot product of complex and real trees."""
+        tree_complex = vp.FunctionTree(mra_3d, dtype=complex)
+        tree_real = vp.FunctionTree(mra_3d)
+        tree_complex.setZero()
+        tree_real.setZero()
+
+        result = vp.dot(tree_complex, tree_real)
+        assert result == 0.0 + 0.0j

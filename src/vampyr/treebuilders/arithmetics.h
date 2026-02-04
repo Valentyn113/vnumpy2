@@ -1,9 +1,13 @@
 #pragma once
 
+#include <complex>
+
 #include <MRCPP/treebuilders/add.h>
 #include <MRCPP/treebuilders/multiply.h>
 
 namespace vampyr {
+
+using ComplexDouble = std::complex<double>;
 template <int D> void arithmetics(pybind11::module &m) {
     using namespace mrcpp;
     namespace py = pybind11;
@@ -42,6 +46,20 @@ template <int D> void arithmetics(pybind11::module &m) {
         "inp"_a);
 
     m.def("dot", [](FunctionTree<D, double> &bra, FunctionTree<D, double> &ket) { return mrcpp::dot<D, double>(bra, ket); }, "bra"_a, "ket"_a);
+
+    // Complex dot products
+    m.def("dot", [](FunctionTree<D, ComplexDouble> &bra, FunctionTree<D, ComplexDouble> &ket) {
+        return mrcpp::dot<D, ComplexDouble>(bra, ket);
+    }, "bra"_a, "ket"_a);
+
+    // Mixed-type dot products (real-complex and complex-real)
+    m.def("dot", [](FunctionTree<D, double> &bra, FunctionTree<D, ComplexDouble> &ket) {
+        return mrcpp::dot<D, double, ComplexDouble>(bra, ket);
+    }, "bra"_a, "ket"_a);
+
+    m.def("dot", [](FunctionTree<D, ComplexDouble> &bra, FunctionTree<D, double> &ket) {
+        return mrcpp::dot<D, ComplexDouble, double>(bra, ket);
+    }, "bra"_a, "ket"_a);
 
     m.def(
         "dot",

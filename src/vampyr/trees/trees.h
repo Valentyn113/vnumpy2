@@ -127,6 +127,93 @@ template <int D> auto impl__pow__(mrcpp::FunctionTree<D, double> *inp, double c)
     return out;
 };
 
+// Complex arithmetic operators
+template <int D>
+auto impl_complex__add__(mrcpp::FunctionTree<D, ComplexDouble> *inp_a, mrcpp::FunctionTree<D, ComplexDouble> *inp_b)
+    -> std::unique_ptr<mrcpp::FunctionTree<D, ComplexDouble>> {
+    using namespace mrcpp;
+    auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp_a->getMRA());
+    FunctionTreeVector<D, ComplexDouble> vec;
+    vec.push_back({ComplexDouble(1.0, 0.0), inp_a});
+    vec.push_back({ComplexDouble(1.0, 0.0), inp_b});
+    build_grid(*out, vec);
+    add(-1.0, *out, vec);
+    return out;
+};
+
+template <int D>
+auto impl_complex__sub__(mrcpp::FunctionTree<D, ComplexDouble> *inp_a, mrcpp::FunctionTree<D, ComplexDouble> *inp_b)
+    -> std::unique_ptr<mrcpp::FunctionTree<D, ComplexDouble>> {
+    using namespace mrcpp;
+    auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp_a->getMRA());
+    FunctionTreeVector<D, ComplexDouble> vec;
+    vec.push_back({ComplexDouble(1.0, 0.0), inp_a});
+    vec.push_back({ComplexDouble(-1.0, 0.0), inp_b});
+    build_grid(*out, vec);
+    add(-1.0, *out, vec);
+    return out;
+};
+
+template <int D>
+auto impl_complex__mul__(mrcpp::FunctionTree<D, ComplexDouble> *inp_a, mrcpp::FunctionTree<D, ComplexDouble> *inp_b)
+    -> std::unique_ptr<mrcpp::FunctionTree<D, ComplexDouble>> {
+    using namespace mrcpp;
+    auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp_a->getMRA());
+    FunctionTreeVector<D, ComplexDouble> vec;
+    vec.push_back({ComplexDouble(1.0, 0.0), inp_a});
+    vec.push_back({ComplexDouble(1.0, 0.0), inp_b});
+    build_grid(*out, vec);
+    build_grid(*out, 1);
+    multiply(-1, *out, vec);
+    return out;
+};
+
+template <int D>
+auto impl_complex__mul__(mrcpp::FunctionTree<D, ComplexDouble> *inp_a, ComplexDouble c)
+    -> std::unique_ptr<mrcpp::FunctionTree<D, ComplexDouble>> {
+    using namespace mrcpp;
+    auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp_a->getMRA());
+    FunctionTreeVector<D, ComplexDouble> vec;
+    vec.push_back({c, inp_a});
+    build_grid(*out, vec);
+    add(-1.0, *out, vec);
+    return out;
+};
+
+template <int D>
+auto impl_complex__pos__(mrcpp::FunctionTree<D, ComplexDouble> *inp)
+    -> std::unique_ptr<mrcpp::FunctionTree<D, ComplexDouble>> {
+    using namespace mrcpp;
+    auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp->getMRA());
+    copy_grid(*out, *inp);
+    copy_func(*out, *inp);
+    return out;
+};
+
+template <int D>
+auto impl_complex__neg__(mrcpp::FunctionTree<D, ComplexDouble> *inp)
+    -> std::unique_ptr<mrcpp::FunctionTree<D, ComplexDouble>> {
+    using namespace mrcpp;
+    auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp->getMRA());
+    FunctionTreeVector<D, ComplexDouble> vec;
+    vec.push_back({ComplexDouble(-1.0, 0.0), inp});
+    build_grid(*out, vec);
+    add(-1.0, *out, vec);
+    return out;
+};
+
+template <int D>
+auto impl_complex__truediv__(mrcpp::FunctionTree<D, ComplexDouble> *inp, ComplexDouble c)
+    -> std::unique_ptr<mrcpp::FunctionTree<D, ComplexDouble>> {
+    using namespace mrcpp;
+    auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp->getMRA());
+    FunctionTreeVector<D, ComplexDouble> vec;
+    vec.push_back({ComplexDouble(1.0, 0.0) / c, inp});
+    build_grid(*out, vec);
+    add(-1.0, *out, vec);
+    return out;
+};
+
 template <int D> void trees(pybind11::module &m) {
     using namespace mrcpp;
     namespace py = pybind11;
@@ -351,7 +438,21 @@ template <int D> void trees(pybind11::module &m) {
              })
         .def("__call__", [](FunctionTree<D, ComplexDouble> &func, const Coord<D> &r) { return func.evalf_precise(r); })
         .def_property_readonly("dtype", [](FunctionTree<D, ComplexDouble>&) { return "complex128"; })
-        .def_property_readonly("is_complex", [](FunctionTree<D, ComplexDouble>&) { return true; });
+        .def_property_readonly("is_complex", [](FunctionTree<D, ComplexDouble>&) { return true; })
+        // Arithmetic operators for complex trees
+        .def("__pos__", &impl_complex__pos__<D>, py::is_operator())
+        .def("__neg__", &impl_complex__neg__<D>, py::is_operator())
+        .def("__add__", &impl_complex__add__<D>, py::is_operator())
+        .def("__iadd__", &impl_complex__add__<D>, py::is_operator())
+        .def("__sub__", &impl_complex__sub__<D>, py::is_operator())
+        .def("__isub__", &impl_complex__sub__<D>, py::is_operator())
+        .def("__mul__", py::overload_cast<FunctionTree<D, ComplexDouble> *, FunctionTree<D, ComplexDouble> *>(&impl_complex__mul__<D>), py::is_operator())
+        .def("__mul__", py::overload_cast<FunctionTree<D, ComplexDouble> *, ComplexDouble>(&impl_complex__mul__<D>), py::is_operator())
+        .def("__imul__", py::overload_cast<FunctionTree<D, ComplexDouble> *, FunctionTree<D, ComplexDouble> *>(&impl_complex__mul__<D>), py::is_operator())
+        .def("__imul__", py::overload_cast<FunctionTree<D, ComplexDouble> *, ComplexDouble>(&impl_complex__mul__<D>), py::is_operator())
+        .def("__rmul__", py::overload_cast<FunctionTree<D, ComplexDouble> *, ComplexDouble>(&impl_complex__mul__<D>), py::is_operator())
+        .def("__truediv__", &impl_complex__truediv__<D>, py::is_operator())
+        .def("__itruediv__", &impl_complex__truediv__<D>, py::is_operator());
 
     // Complex MWNode bindings (all dimensions)
     py::class_<MWNode<D, ComplexDouble>>(m, (std::string("MWNode") + std::to_string(D) + "D_Complex").c_str())
