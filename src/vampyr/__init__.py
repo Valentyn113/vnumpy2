@@ -62,11 +62,35 @@ def MultiResolutionAnalysis(*args, **kwargs):
     if d == 3: return MultiResolutionAnalysis3D(*args, **kwargs)
     raise ValueError(f"Unsupported dimension: {d}")
 
-def FunctionTree(mra, *args, **kwargs):
+def FunctionTree(mra, *args, dtype=None, **kwargs):
+    """Create a FunctionTree with the given MRA.
+
+    Parameters
+    ----------
+    mra : MultiResolutionAnalysis
+        The multi-resolution analysis defining the computational domain.
+    dtype : type or str, optional
+        Data type for the tree. Options:
+        - None, float, 'float64' (default): Real-valued tree
+        - complex, 'complex', 'complex128': Complex-valued tree
+
+    Returns
+    -------
+    FunctionTree
+        A FunctionTree of the appropriate dimension and dtype.
+    """
     d = mra.dimension
-    if d == 1: return FunctionTree1D(mra, *args, **kwargs)
-    if d == 2: return FunctionTree2D(mra, *args, **kwargs)
-    if d == 3: return FunctionTree3D(mra, *args, **kwargs)
+    is_complex = dtype in (complex, 'complex', 'complex128')
+
+    if is_complex:
+        if d == 1: raise NotImplementedError("Complex FunctionTree1D not yet implemented")
+        if d == 2: raise NotImplementedError("Complex FunctionTree2D not yet implemented")
+        if d == 3: return FunctionTree3D_Complex(mra, *args, **kwargs)
+    else:
+        if d == 1: return FunctionTree1D(mra, *args, **kwargs)
+        if d == 2: return FunctionTree2D(mra, *args, **kwargs)
+        if d == 3: return FunctionTree3D(mra, *args, **kwargs)
+
     raise ValueError(f"Unsupported dimension: {d}")
 
 def Gaussian(*args, **kwargs):

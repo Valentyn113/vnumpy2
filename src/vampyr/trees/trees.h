@@ -1,7 +1,10 @@
 #pragma once
 
+#include <complex>
 #include <filesystem>
+#include <type_traits>
 
+#include <pybind11/complex.h>
 #include <pybind11/eigen.h>
 #include <pybind11/stl/filesystem.h>
 
@@ -12,6 +15,28 @@
 #include <MRCPP/trees/TreeIterator.h>
 
 namespace vampyr {
+
+using ComplexDouble = std::complex<double>;
+
+// Helper to generate type suffix for class names
+template <typename T>
+constexpr const char* type_suffix() {
+    if constexpr (std::is_same_v<T, double>) {
+        return "";
+    } else {
+        return "_Complex";
+    }
+}
+
+// Helper to get dtype string for Python
+template <typename T>
+constexpr const char* dtype_string() {
+    if constexpr (std::is_same_v<T, double>) {
+        return "float64";
+    } else {
+        return "complex128";
+    }
+}
 template <int D>
 auto impl__add__(mrcpp::FunctionTree<D, double> *inp_a, mrcpp::FunctionTree<D, double> *inp_b)
     -> std::unique_ptr<mrcpp::FunctionTree<D, double>> {
@@ -178,6 +203,8 @@ template <int D> void trees(pybind11::module &m) {
                  return out;
              })
         .def("__call__", [](FunctionTree<D, double> &func, const Coord<D> &r) { return func.evalf_precise(r); })
+        .def_property_readonly("dtype", [](FunctionTree<D, double>&) { return "float64"; })
+        .def_property_readonly("is_complex", [](FunctionTree<D, double>&) { return false; })
         .def("__pos__", &impl__pos__<D>, py::is_operator())
         .def("__neg__", &impl__neg__<D>, py::is_operator())
         .def("__add__", &impl__add__<D>, py::is_operator())
@@ -258,5 +285,66 @@ template <int D> void trees(pybind11::module &m) {
         .def("get", [](TreeIterator<D, double>& it) -> MWNode<D, double>& { return it.getNode(); }, py::return_value_policy::reference_internal)
         .def("init", &TreeIterator<D, double>::init)
         .def("next", &TreeIterator<D, double>::next);
+
+    // Complex FunctionTree bindings (Phase 1: 3D only)
+    if constexpr (D == 3) {
+        // MWTree for complex numbers
+        py::class_<MWTree<D, ComplexDouble>>(m, "MWTree3D_Complex")
+            .def("MRA", &MWTree<D, ComplexDouble>::getMRA, py::return_value_policy::reference_internal)
+            .def("nNodes", &MWTree<D, ComplexDouble>::getNNodes)
+            .def("nEndNodes", &MWTree<D, ComplexDouble>::getNEndNodes)
+            .def("nRootNodes", &MWTree<D, ComplexDouble>::getNRootNodes)
+            .def("rootScale", &MWTree<D, ComplexDouble>::getRootScale)
+            .def("depth", &MWTree<D, ComplexDouble>::getDepth)
+            .def("setZero",
+                 [](MWTree<D, ComplexDouble> *out) {
+                     out->setZero();
+                     return out;
+                 })
+            .def("clear", &MWTree<D, ComplexDouble>::clear)
+            .def("setName", &MWTree<D, ComplexDouble>::setName)
+            .def("name", &MWTree<D, ComplexDouble>::getName)
+            .def("squaredNorm", &MWTree<D, ComplexDouble>::getSquareNorm)
+            .def("norm",
+                 [](MWTree<D, ComplexDouble> &tree) {
+                     auto sqNorm = tree.getSquareNorm();
+                     return (sqNorm >= 0.0) ? std::sqrt(sqNorm) : -1.0;
+                 })
+            .def("__str__", [](MWTree<D, ComplexDouble> &tree) {
+                std::ostringstream os;
+                os << tree;
+                return os.str();
+            });
+
+        // FunctionTree for complex numbers
+        py::class_<FunctionTree<D, ComplexDouble>, MWTree<D, ComplexDouble>>(m, "FunctionTree3D_Complex")
+            .def(py::init<const MultiResolutionAnalysis<D> &, const std::string &>(), "mra"_a, "name"_a = "nn")
+            .def("nGenNodes", &FunctionTree<D, ComplexDouble>::getNGenNodes)
+            .def("deleteGenerated", &FunctionTree<D, ComplexDouble>::deleteGenerated)
+            .def("integrate", &FunctionTree<D, ComplexDouble>::integrate)
+            .def("normalize",
+                 [](FunctionTree<D, ComplexDouble> *out) {
+                     out->normalize();
+                     return out;
+                 })
+            .def(
+                "crop",
+                [](FunctionTree<D, ComplexDouble> *out, double prec, bool abs_prec) {
+                    out->crop(prec, 1.0, abs_prec);
+                    return out;
+                },
+                "prec"_a,
+                "abs_prec"_a = false)
+            .def("deepCopy",
+                 [](FunctionTree<D, ComplexDouble> *inp) {
+                     auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp->getMRA());
+                     copy_grid(*out, *inp);
+                     copy_func(*out, *inp);
+                     return out;
+                 })
+            .def("__call__", [](FunctionTree<D, ComplexDouble> &func, const Coord<D> &r) { return func.evalf_precise(r); })
+            .def_property_readonly("dtype", [](FunctionTree<D, ComplexDouble>&) { return "complex128"; })
+            .def_property_readonly("is_complex", [](FunctionTree<D, ComplexDouble>&) { return true; });
+    }
 }
 } // namespace vampyr
