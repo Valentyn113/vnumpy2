@@ -1,10 +1,15 @@
 #pragma once
 
+#include <complex>
+
+#include <pybind11/complex.h>
 #include <pybind11/functional.h>
 
 #include "PyProjectors.h"
 
 namespace vampyr {
+
+using ComplexDouble = std::complex<double>;
 template <int D> void project(pybind11::module &m) {
     using namespace mrcpp;
     namespace py = pybind11;
@@ -14,6 +19,17 @@ template <int D> void project(pybind11::module &m) {
         "ZeroTree",
         [](const MultiResolutionAnalysis<D> &mra, const std::string &name) {
             auto out = std::make_unique<FunctionTree<D, double>>(mra, name);
+            out->setZero();
+            return out;
+        },
+        "mra"_a,
+        "name"_a = "nn");
+
+    // Complex ZeroTree
+    m.def(
+        "ZeroTree_Complex",
+        [](const MultiResolutionAnalysis<D> &mra, const std::string &name) {
+            auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(mra, name);
             out->setZero();
             return out;
         },
@@ -63,6 +79,51 @@ template <int D> void project(pybind11::module &m) {
                     throw;
                 }
 
+                auto old_threads = mrcpp_get_num_threads();
+                set_max_threads(1);
+                auto out = P(func);
+                set_max_threads(old_threads);
+                return out;
+            },
+            "func"_a);
+
+    // Complex ScalingProjector
+    py::class_<PyScalingProjectorComplex<D>>(m, (std::string("ScalingProjector") + std::to_string(D) + "D_Complex").c_str())
+        .def(py::init<const MultiResolutionAnalysis<D> &, double>(), "mra"_a, "prec"_a)
+        .def(py::init<const MultiResolutionAnalysis<D> &, int>(), "mra"_a, "scale"_a)
+        .def(
+            "__call__",
+            [](PyScalingProjectorComplex<D> &P, std::function<ComplexDouble(const Coord<D> &r)> func) {
+                try {
+                    auto arr = std::array<double, D>();
+                    arr.fill(111111.111);
+                    func(arr);
+                } catch (py::cast_error &e) {
+                    py::print("Error: Invalid definition of analytic function");
+                    throw;
+                }
+                auto old_threads = mrcpp_get_num_threads();
+                set_max_threads(1);
+                auto out = P(func);
+                set_max_threads(old_threads);
+                return out;
+            },
+            "func"_a);
+
+    // Complex WaveletProjector
+    py::class_<PyWaveletProjectorComplex<D>>(m, (std::string("WaveletProjector") + std::to_string(D) + "D_Complex").c_str())
+        .def(py::init<const MultiResolutionAnalysis<D> &, int>(), "mra"_a, "scale"_a)
+        .def(
+            "__call__",
+            [](PyWaveletProjectorComplex<D> &P, std::function<ComplexDouble(const Coord<D> &r)> func) {
+                try {
+                    auto arr = std::array<double, D>();
+                    arr.fill(111111.111);
+                    func(arr);
+                } catch (py::cast_error &e) {
+                    py::print("Error: Invalid definition of analytic function");
+                    throw;
+                }
                 auto old_threads = mrcpp_get_num_threads();
                 set_max_threads(1);
                 auto out = P(func);

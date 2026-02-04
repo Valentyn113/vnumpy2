@@ -302,3 +302,76 @@ class TestComplexArithmetic:
 
         result = vp.dot(tree_complex, tree_real)
         assert result == 0.0 + 0.0j
+
+
+class TestComplexProjection:
+    """Tests for complex projection."""
+
+    def test_scaling_projector_complex_creation(self):
+        """Test creating a complex ScalingProjector."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+        assert P is not None
+
+    def test_scaling_projector_complex_with_scale(self):
+        """Test creating a complex ScalingProjector with fixed scale."""
+        P = vp.ScalingProjector(mra_3d, scale=0, dtype=complex)
+        assert P is not None
+
+    def test_wavelet_projector_complex_creation(self):
+        """Test creating a complex WaveletProjector."""
+        P = vp.WaveletProjector(mra_3d, scale=0, dtype=complex)
+        assert P is not None
+
+    def test_scaling_projector_project_complex_function(self):
+        """Test projecting a complex-valued function."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+
+        def complex_func(r):
+            return (1.0 + 1.0j) * r[0]
+
+        tree = P(complex_func)
+        assert tree.dtype == "complex128"
+        assert tree.is_complex is True
+
+    def test_scaling_projector_project_pure_imaginary(self):
+        """Test projecting a pure imaginary function."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+
+        def imag_func(r):
+            return 1.0j * (r[0] + r[1] + r[2])
+
+        tree = P(imag_func)
+        assert tree.dtype == "complex128"
+        # The integral of i*(x+y+z) over [-1,1]^3 should be purely imaginary
+        integral = tree.integrate()
+        assert integral.real == pytest.approx(0.0, abs=1e-10)
+
+    def test_wavelet_projector_project_complex_function(self):
+        """Test projecting a complex function with WaveletProjector."""
+        P = vp.WaveletProjector(mra_3d, scale=0, dtype=complex)
+
+        def complex_func(r):
+            return (1.0 + 2.0j)
+
+        tree = P(complex_func)
+        assert tree.dtype == "complex128"
+
+    def test_complex_projection_1d(self):
+        """Test complex projection in 1D."""
+        P = vp.ScalingProjector(mra_1d, prec=1e-3, dtype=complex)
+
+        def complex_func(r):
+            return (1.0 + 1.0j) * r[0]
+
+        tree = P(complex_func)
+        assert tree.dtype == "complex128"
+
+    def test_complex_projection_2d(self):
+        """Test complex projection in 2D."""
+        P = vp.ScalingProjector(mra_2d, prec=1e-3, dtype=complex)
+
+        def complex_func(r):
+            return (1.0 + 1.0j) * (r[0] + r[1])
+
+        tree = P(complex_func)
+        assert tree.dtype == "complex128"

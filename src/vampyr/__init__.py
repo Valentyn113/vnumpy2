@@ -205,18 +205,69 @@ def TreeIterator(*args, **kwargs):
     if d == 3: return TreeIterator3D(*args, **kwargs)
     raise ValueError("Could not infer dimension for TreeIterator. Please provide 'tree' or 'dim'.")
 
-def ScalingProjector(mra, *args, **kwargs):
+def ScalingProjector(mra, *args, dtype=None, **kwargs):
+    """Create a ScalingProjector.
+
+    Parameters
+    ----------
+    mra : MultiResolutionAnalysis
+        The multi-resolution analysis.
+    prec : float, optional
+        Precision for adaptive projection.
+    scale : int, optional
+        Fixed scale for projection.
+    dtype : type or str, optional
+        Data type: None/'float64' (default) or complex/'complex128'.
+
+    Returns
+    -------
+    ScalingProjector
+        A projector of the appropriate dimension and dtype.
+    """
     d = mra.dimension
-    if d == 1: return ScalingProjector1D(mra, *args, **kwargs)
-    if d == 2: return ScalingProjector2D(mra, *args, **kwargs)
-    if d == 3: return ScalingProjector3D(mra, *args, **kwargs)
+    is_complex = dtype in (complex, 'complex', 'complex128')
+
+    if is_complex:
+        if d == 1: return ScalingProjector1D_Complex(mra, *args, **kwargs)
+        if d == 2: return ScalingProjector2D_Complex(mra, *args, **kwargs)
+        if d == 3: return ScalingProjector3D_Complex(mra, *args, **kwargs)
+    else:
+        if d == 1: return ScalingProjector1D(mra, *args, **kwargs)
+        if d == 2: return ScalingProjector2D(mra, *args, **kwargs)
+        if d == 3: return ScalingProjector3D(mra, *args, **kwargs)
+
     raise ValueError(f"Unsupported dimension: {d}")
 
-def WaveletProjector(mra, *args, **kwargs):
+def WaveletProjector(mra, *args, dtype=None, **kwargs):
+    """Create a WaveletProjector.
+
+    Parameters
+    ----------
+    mra : MultiResolutionAnalysis
+        The multi-resolution analysis.
+    scale : int
+        Fixed scale for projection.
+    dtype : type or str, optional
+        Data type: None/'float64' (default) or complex/'complex128'.
+
+    Returns
+    -------
+    WaveletProjector
+        A projector of the appropriate dimension and dtype.
+    """
     d = mra.dimension
-    if d == 1: return WaveletProjector1D(mra, *args, **kwargs)
-    if d == 2: return WaveletProjector2D(mra, *args, **kwargs)
-    if d == 3: return WaveletProjector3D(mra, *args, **kwargs)
+    is_complex = dtype in (complex, 'complex', 'complex128')
+
+    if is_complex:
+        if d == 1: return WaveletProjector1D_Complex(mra, *args, **kwargs)
+        if d == 2: return WaveletProjector2D_Complex(mra, *args, **kwargs)
+        if d == 3: return WaveletProjector3D_Complex(mra, *args, **kwargs)
+    else:
+        if d == 1: return WaveletProjector1D(mra, *args, **kwargs)
+        if d == 2: return WaveletProjector2D(mra, *args, **kwargs)
+        if d == 3: return WaveletProjector3D(mra, *args, **kwargs)
+
+    raise ValueError(f"Unsupported dimension: {d}")
     raise ValueError(f"Unsupported dimension: {d}")
 
 class FunctionMap:
