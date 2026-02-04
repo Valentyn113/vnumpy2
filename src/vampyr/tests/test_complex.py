@@ -375,3 +375,125 @@ class TestComplexProjection:
 
         tree = P(complex_func)
         assert tree.dtype == "complex128"
+
+
+class TestComplexConversion:
+    """Tests for complex type conversion utilities."""
+
+    def test_real_to_complex(self):
+        """Test converting a real tree to complex."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3)
+
+        def real_func(r):
+            return r[0] + r[1] + r[2]
+
+        real_tree = P(real_func)
+        assert real_tree.dtype == "float64"
+
+        complex_tree = real_tree.to_complex()
+        assert complex_tree.dtype == "complex128"
+        assert complex_tree.is_complex is True
+
+        # Verify the values are the same (just with zero imaginary part)
+        r = [0.1, 0.2, 0.3]
+        real_val = real_tree(r)
+        complex_val = complex_tree(r)
+        assert complex_val.real == pytest.approx(real_val, rel=1e-10)
+        assert complex_val.imag == pytest.approx(0.0, abs=1e-10)
+
+    def test_extract_real_part(self):
+        """Test extracting real part from complex tree."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+
+        def complex_func(r):
+            return (2.0 + 3.0j) * r[0]
+
+        complex_tree = P(complex_func)
+        real_tree = complex_tree.real()
+
+        assert real_tree.dtype == "float64"
+        assert real_tree.is_complex is False
+
+        r = [0.5, 0.1, 0.1]
+        # Real part of (2+3j)*0.5 = 1.0
+        assert real_tree(r) == pytest.approx(1.0, rel=1e-3)
+
+    def test_extract_imag_part(self):
+        """Test extracting imaginary part from complex tree."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+
+        def complex_func(r):
+            return (2.0 + 3.0j) * r[0]
+
+        complex_tree = P(complex_func)
+        imag_tree = complex_tree.imag()
+
+        assert imag_tree.dtype == "float64"
+        assert imag_tree.is_complex is False
+
+        r = [0.5, 0.1, 0.1]
+        # Imag part of (2+3j)*0.5 = 1.5
+        assert imag_tree(r) == pytest.approx(1.5, rel=1e-3)
+
+    def test_conjugate_method(self):
+        """Test the conj() method on complex tree."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+
+        def complex_func(r):
+            return (1.0 + 2.0j) * r[0]
+
+        tree = P(complex_func)
+        conj_tree = tree.conj()
+
+        assert conj_tree.dtype == "complex128"
+
+        r = [0.5, 0.1, 0.1]
+        original = tree(r)
+        conjugated = conj_tree(r)
+
+        assert conjugated.real == pytest.approx(original.real, rel=1e-10)
+        assert conjugated.imag == pytest.approx(-original.imag, rel=1e-10)
+
+    def test_conjugate_function(self):
+        """Test the vp.conj() function."""
+        P = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+
+        def complex_func(r):
+            return (1.0 + 2.0j) * r[0]
+
+        tree = P(complex_func)
+        conj_tree = vp.conj(tree)
+
+        assert conj_tree.dtype == "complex128"
+
+        r = [0.5, 0.1, 0.1]
+        original = tree(r)
+        conjugated = conj_tree(r)
+
+        assert conjugated.real == pytest.approx(original.real, rel=1e-10)
+        assert conjugated.imag == pytest.approx(-original.imag, rel=1e-10)
+
+    def test_real_imag_roundtrip(self):
+        """Test that extracting real+imag and combining gives back original."""
+        P_complex = vp.ScalingProjector(mra_3d, prec=1e-3, dtype=complex)
+
+        def complex_func(r):
+            return (1.0 + 2.0j) * (r[0] + r[1])
+
+        original = P_complex(complex_func)
+        real_part = original.real()
+        imag_part = original.imag()
+
+        # Convert back: real + i*imag should equal original
+        real_as_complex = real_part.to_complex()
+        imag_as_complex = imag_part.to_complex()
+
+        # Multiply imag by i
+        reconstructed = real_as_complex + (1.0j) * imag_as_complex
+
+        r = [0.3, 0.4, 0.1]
+        original_val = original(r)
+        reconstructed_val = reconstructed(r)
+
+        assert reconstructed_val.real == pytest.approx(original_val.real, rel=1e-3)
+        assert reconstructed_val.imag == pytest.approx(original_val.imag, rel=1e-3)

@@ -292,6 +292,12 @@ template <int D> void trees(pybind11::module &m) {
         .def("__call__", [](FunctionTree<D, double> &func, const Coord<D> &r) { return func.evalf_precise(r); })
         .def_property_readonly("dtype", [](FunctionTree<D, double>&) { return "float64"; })
         .def_property_readonly("is_complex", [](FunctionTree<D, double>&) { return false; })
+        .def("to_complex",
+             [](FunctionTree<D, double> *inp) {
+                 FunctionTree<D, ComplexDouble> *out = nullptr;
+                 inp->CopyTreeToComplex(out);
+                 return std::unique_ptr<FunctionTree<D, ComplexDouble>>(out);
+             })
         .def("__pos__", &impl__pos__<D>, py::is_operator())
         .def("__neg__", &impl__neg__<D>, py::is_operator())
         .def("__add__", &impl__add__<D>, py::is_operator())
@@ -439,6 +445,33 @@ template <int D> void trees(pybind11::module &m) {
         .def("__call__", [](FunctionTree<D, ComplexDouble> &func, const Coord<D> &r) { return func.evalf_precise(r); })
         .def_property_readonly("dtype", [](FunctionTree<D, ComplexDouble>&) { return "complex128"; })
         .def_property_readonly("is_complex", [](FunctionTree<D, ComplexDouble>&) { return true; })
+        // Type conversion methods
+        .def("real",
+             [](FunctionTree<D, ComplexDouble> *inp) {
+                 return std::unique_ptr<FunctionTree<D, double>>(inp->Real());
+             })
+        .def("imag",
+             [](FunctionTree<D, ComplexDouble> *inp) {
+                 return std::unique_ptr<FunctionTree<D, double>>(inp->Imag());
+             })
+        .def("conj",
+             [](FunctionTree<D, ComplexDouble> *inp) {
+                 // First make a deep copy, then conjugate in place
+                 auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp->getMRA());
+                 copy_grid(*out, *inp);
+                 copy_func(*out, *inp);
+                 // Now conjugate the coefficients in place
+                 for (int i = 0; i < out->getNEndNodes(); i++) {
+                     auto &out_node = out->getEndMWNode(i);
+                     int n_coefs = out_node.getNCoefs();
+                     for (int j = 0; j < n_coefs; j++) {
+                         out_node.getCoefs()[j] = std::conj(out_node.getCoefs()[j]);
+                     }
+                 }
+                 out->mwTransform(BottomUp);
+                 out->calcSquareNorm();
+                 return out;
+             })
         // Arithmetic operators for complex trees
         .def("__pos__", &impl_complex__pos__<D>, py::is_operator())
         .def("__neg__", &impl_complex__neg__<D>, py::is_operator())

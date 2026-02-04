@@ -61,6 +61,27 @@ template <int D> void arithmetics(pybind11::module &m) {
         return mrcpp::dot<D, ComplexDouble, double>(bra, ket);
     }, "bra"_a, "ket"_a);
 
+    // Conjugate function for complex trees
+    m.def("conj",
+          [](FunctionTree<D, ComplexDouble> *inp) {
+              // First make a deep copy, then conjugate in place
+              auto out = std::make_unique<FunctionTree<D, ComplexDouble>>(inp->getMRA());
+              copy_grid(*out, *inp);
+              copy_func(*out, *inp);
+              // Now conjugate the coefficients in place
+              for (int i = 0; i < out->getNEndNodes(); i++) {
+                  auto &out_node = out->getEndMWNode(i);
+                  int n_coefs = out_node.getNCoefs();
+                  for (int j = 0; j < n_coefs; j++) {
+                      out_node.getCoefs()[j] = std::conj(out_node.getCoefs()[j]);
+                  }
+              }
+              out->mwTransform(BottomUp);
+              out->calcSquareNorm();
+              return out;
+          },
+          "inp"_a);
+
     m.def(
         "dot",
         [](std::vector<FunctionTree<D, double> *> &inp_a, std::vector<FunctionTree<D, double> *> &inp_b) {
