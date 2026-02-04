@@ -22,6 +22,18 @@ else()
     )
 
   set(CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER})
+
+  # Set smart default for ENABLE_ARCH_FLAGS
+  # 1. Always OFF for Python wheels (SKBUILD) to ensure portability
+  # 2. Default to OFF on ARM to prevent vectorization crashes
+  if(NOT DEFINED ENABLE_ARCH_FLAGS)
+    if(SKBUILD OR CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm")
+      set(ENABLE_ARCH_FLAGS FALSE CACHE BOOL "Disable architecture-specific flags for stability/portability")
+    else()
+      set(ENABLE_ARCH_FLAGS TRUE CACHE BOOL "Enable architecture-specific flags")
+    endif()
+  endif()
+
   # Always build with OpenMP and without MPI
   set(ENABLE_OPENMP TRUE CACHE BOOL "")
   set(ENABLE_MPI FALSE CACHE BOOL "")

@@ -11,39 +11,42 @@ level Python interface to the [MRCPP](https://github.com/MRChemSoft/mrcpp) code.
 
 ## Installation
 
-### From source
+### Prerequisites
 
-To build VAMPyR from source with OpenMP parallelization using CMake:
+To build VAMPyR from source, you need the following tools installed on your system:
+- **C++ Compiler** (supporting C++17, e.g., GCC 9+, Clang 10+, or MSVC 2019+)
+- **CMake** (version 3.17 or higher)
+- **Ninja** (optional, but recommended for faster builds)
 
-```sh
-$ git clone https://github.com/MRChemSoft/vampyr.git
-$ cd vampyr
-$ mkdir build
-$ cd build
-$ cmake ..
-$ make
-```
+Python dependencies (`numpy`, `matplotlib`) and the **MRCPP** backend are handled automatically by the build system.
 
-To use the VAMPyR module you need to add it to your `$PYTHONPATH`:
+### Using uv (Recommended)
 
-``` sh
-$ export PYTHONPATH=<path-to-vampyr>/build/lib/python<version>/site-packages:$PYTHONPATH
+The fastest and most robust way to install VAMPyR from source is using [uv](https://docs.astral.sh/uv/):
+
+```bash
+# Standard install (fetches MRCPP automatically)
+uv pip install .
+
+# Editable install for development
+uv pip install -e .
 ```
 
 ### Using pip
 
-To build VAMPyR from source with OpenMP parallelization using `pip`, here in a virtual
-environment called `myenv`:
+VAMPyR uses a modern PEP 517 build system (`scikit-build-core`), so it can be installed with any modern pip version:
 
-```sh
-$ git clone https://github.com/MRChemSoft/vampyr.git
-$ cd vampyr
-$ virtualenv myenv
-$ source myenv/bin/activate
-$ python -m pip install .
+```bash
+python -m pip install .
 ```
 
-The VAMPyR module is now available whenever you have activated the `myenv` environment.
+### Linking to a local MRCPP build
+
+If you are developing both MRCPP and VAMPyR, you can link against a local MRCPP installation using config settings:
+
+```bash
+uv pip install -e . --config-settings=cmake.args="-DCMAKE_PREFIX_PATH=/path/to/mrcpp/install"
+```
 
 ### Using Conda
 

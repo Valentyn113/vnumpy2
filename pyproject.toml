@@ -1,8 +1,35 @@
-[tool.isort]
-profile = "black"
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "vampyr"
+version = "0.3a0"
+description = "Python bindings for the MRCPP library"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+dependencies = [
+    "numpy",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-cov"]
+
+[tool.scikit-build]
+# Minimum CMake version required
+cmake.version = ">=3.17"
+
+# Explicitly specify the package directory
+wheel.packages = ["src/vampyr"]
+
+# Pass the necessary CMake arguments
+# We keep the install directory definition to match the CMakeLists.txt expectation
+cmake.define = { PYMOD_INSTALL_FULLDIR = "vampyr" }
 
 [tool.pytest.ini_options]
-testpaths = [ "tests" ]
+testpaths = ["src/vampyr/tests"]
 addopts = "-rws"
 norecursedirs = [
   "env",
@@ -15,14 +42,5 @@ norecursedirs = [
   ".git",
 ]
 
-[build-system]
-requires = [
-  "pybind11[global]>=2.6",
-  "setuptools>=46.4.0",
-  "wheel",
-  "scikit-build>=0.13",
-  "cmake>=3.17",
-  "ninja",
-]
-
-build-backend = "setuptools.build_meta"
+[tool.isort]
+profile = "black"
