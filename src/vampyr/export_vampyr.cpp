@@ -6,6 +6,7 @@
  */
 
 #include <pybind11/pybind11.h>
+#include <pybind11/native_enum.h>
 
 #include <string>
 
@@ -32,14 +33,16 @@ using namespace pybind11::literals;
 namespace vampyr {
 
 void constants(py::module &m) {
-    py::enum_<Traverse>(m, "Traverse")
+    py::native_enum<Traverse>(m, "Traverse", "enum.IntEnum")
         .value("TopDown", Traverse::TopDown)
         .value("BottomUp", Traverse::BottomUp)
-        .export_values();
-    py::enum_<Iterator>(m, "Iterator")
+        .export_values()
+        .finalize();
+    py::native_enum<Iterator>(m, "Iterator", "enum.IntEnum")
         .value("Lebesgue", Iterator::Lebesgue)
         .value("Hilbert", Iterator::Hilbert)
-        .export_values();
+        .export_values()
+        .finalize();
 }
 
 template <int D> void bind_advanced(py::module &mod) noexcept {

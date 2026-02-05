@@ -1,4 +1,4 @@
-find_package(pybind11 2.9 CONFIG QUIET)
+find_package(pybind11 3.0 CONFIG QUIET)
 
 set(PYBIND11_CPP_STANDARD "-std=c++${CMAKE_CXX_STANDARD}")
 
@@ -10,7 +10,7 @@ else()
   FetchContent_Declare(pybind11
     QUIET
     URL
-      https://github.com/pybind/pybind11/archive/v2.10.0.tar.gz
+      https://github.com/pybind/pybind11/archive/v3.0.0.tar.gz
     )
   set(PYBIND11_TEST OFF CACHE BOOL "")
   FetchContent_MakeAvailable(pybind11)
