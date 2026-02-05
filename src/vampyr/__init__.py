@@ -7,6 +7,13 @@ __version__ = _vampyr.__version__
 __doc__ = _vampyr.__doc__
 
 def BoundingBox(*args, **kwargs):
+    # Normalize scalar kwargs to 1-element lists for 1D convenience
+    for key in ['corner', 'nboxes']:
+        if key in kwargs and isinstance(kwargs[key], (int, float)):
+            kwargs[key] = [int(kwargs[key])]
+    if 'scaling' in kwargs and isinstance(kwargs['scaling'], (int, float)):
+        kwargs['scaling'] = [float(kwargs['scaling'])]
+
     d = kwargs.pop('dim', None)
     if d is not None:
         if d == 1: return BoundingBox1D(*args, **kwargs)
@@ -94,6 +101,18 @@ def FunctionTree(mra, *args, dtype=None, **kwargs):
     raise ValueError(f"Unsupported dimension: {d}")
 
 def Gaussian(*args, **kwargs):
+    # Normalize scalar kwargs to 1-element lists for 1D convenience
+    for key in ['position', 'poly_exponent']:
+        if key in kwargs and isinstance(kwargs[key], (int, float)):
+            kwargs[key] = [kwargs[key]]
+    # Normalize scalar positional args (position=args[2], poly_exponent=args[3])
+    args = list(args)
+    if len(args) > 2 and isinstance(args[2], (int, float)):
+        args[2] = [args[2]]
+    if len(args) > 3 and isinstance(args[3], (int, float)):
+        args[3] = [args[3]]
+    args = tuple(args)
+
     d = kwargs.pop('dim', None)
     if d is None:
         if len(args) > 2:
@@ -116,6 +135,18 @@ def Gaussian(*args, **kwargs):
     raise ValueError(f"Unsupported dimension: {d}")
 
 def GaussFunc(*args, **kwargs):
+    # Normalize scalar kwargs to 1-element lists for 1D convenience
+    for key in ['position', 'poly_exponent']:
+        if key in kwargs and isinstance(kwargs[key], (int, float)):
+            kwargs[key] = [kwargs[key]]
+    # Normalize scalar positional args (position=args[2], poly_exponent=args[3])
+    args = list(args)
+    if len(args) > 2 and isinstance(args[2], (int, float)):
+        args[2] = [args[2]]
+    if len(args) > 3 and isinstance(args[3], (int, float)):
+        args[3] = [args[3]]
+    args = tuple(args)
+
     d = kwargs.pop('dim', None)
     if d is None:
         if len(args) > 2: d = len(args[2])
@@ -182,6 +213,14 @@ def BSDerivative(mra, *args, **kwargs):
     raise ValueError(f"Unsupported dimension: {d}")
 
 def NodeIndex(*args, **kwargs):
+    # Normalize scalar translation to 1-element list for 1D convenience
+    if 'translation' in kwargs and isinstance(kwargs['translation'], int):
+        kwargs['translation'] = [kwargs['translation']]
+    args = list(args)
+    if len(args) > 1 and isinstance(args[1], int):
+        args[1] = [args[1]]
+    args = tuple(args)
+
     d = kwargs.pop('dim', None)
     if d is None:
         if len(args) > 1: d = len(args[1])
@@ -205,6 +244,27 @@ def TreeIterator(*args, **kwargs):
     if d == 3: return TreeIterator3D(*args, **kwargs)
     raise ValueError("Could not infer dimension for TreeIterator. Please provide 'tree' or 'dim'.")
 
+def _wrap_1d_func(f):
+    """Wrap a scalar 1D function f(x) -> f([x]) for the C++ projector interface.
+
+    Tries calling f with a scalar first. If that works, wraps it so the C++
+    side (which passes [x]) still works. If f already expects a vector [x],
+    returns it unchanged. This preserves backward compatibility.
+    """
+    try:
+        # Use the same test value as the C++ projector validation
+        f(111111.111)
+    except (TypeError, IndexError):
+        # f expects a list/array argument like r[0] — no wrapping needed
+        return f
+    except Exception:
+        # Other errors (e.g. domain errors) — f still accepted a scalar
+        pass
+    # f accepts a scalar — wrap it to unpack the 1-element list from C++
+    def wrapped(r):
+        return f(r[0])
+    return wrapped
+
 def ScalingProjector(mra, *args, dtype=None, **kwargs):
     """Create a ScalingProjector.
 
@@ -223,16 +283,25 @@ def ScalingProjector(mra, *args, dtype=None, **kwargs):
     -------
     ScalingProjector
         A projector of the appropriate dimension and dtype.
+
+    Notes
+    -----
+    In 1D, analytic functions can be defined as ``lambda x: x**2``
+    (scalar) or ``lambda r: r[0]**2`` (vector). Both forms are supported.
     """
     d = mra.dimension
     is_complex = dtype in (complex, 'complex', 'complex128')
 
     if is_complex:
-        if d == 1: return ScalingProjector1D_Complex(mra, *args, **kwargs)
+        if d == 1:
+            proj = ScalingProjector1D_Complex(mra, *args, **kwargs)
+            return _Projector1DWrapper(proj)
         if d == 2: return ScalingProjector2D_Complex(mra, *args, **kwargs)
         if d == 3: return ScalingProjector3D_Complex(mra, *args, **kwargs)
     else:
-        if d == 1: return ScalingProjector1D(mra, *args, **kwargs)
+        if d == 1:
+            proj = ScalingProjector1D(mra, *args, **kwargs)
+            return _Projector1DWrapper(proj)
         if d == 2: return ScalingProjector2D(mra, *args, **kwargs)
         if d == 3: return ScalingProjector3D(mra, *args, **kwargs)
 
@@ -254,21 +323,44 @@ def WaveletProjector(mra, *args, dtype=None, **kwargs):
     -------
     WaveletProjector
         A projector of the appropriate dimension and dtype.
+
+    Notes
+    -----
+    In 1D, analytic functions can be defined as ``lambda x: x**2``
+    (scalar) or ``lambda r: r[0]**2`` (vector). Both forms are supported.
     """
     d = mra.dimension
     is_complex = dtype in (complex, 'complex', 'complex128')
 
     if is_complex:
-        if d == 1: return WaveletProjector1D_Complex(mra, *args, **kwargs)
+        if d == 1:
+            proj = WaveletProjector1D_Complex(mra, *args, **kwargs)
+            return _Projector1DWrapper(proj)
         if d == 2: return WaveletProjector2D_Complex(mra, *args, **kwargs)
         if d == 3: return WaveletProjector3D_Complex(mra, *args, **kwargs)
     else:
-        if d == 1: return WaveletProjector1D(mra, *args, **kwargs)
+        if d == 1:
+            proj = WaveletProjector1D(mra, *args, **kwargs)
+            return _Projector1DWrapper(proj)
         if d == 2: return WaveletProjector2D(mra, *args, **kwargs)
         if d == 3: return WaveletProjector3D(mra, *args, **kwargs)
 
     raise ValueError(f"Unsupported dimension: {d}")
-    raise ValueError(f"Unsupported dimension: {d}")
+
+class _Projector1DWrapper:
+    """Wrapper for 1D projectors that auto-adapts scalar functions.
+
+    Allows users to write ``projector(lambda x: x**2)`` instead of
+    ``projector(lambda r: r[0]**2)`` while keeping full backward compatibility.
+    For RepresentableFunction objects (like GaussFunc), passes them through directly.
+    """
+    def __init__(self, proj):
+        self._proj = proj
+
+    def __call__(self, f):
+        if callable(f) and not hasattr(f, 'evalf'):
+            f = _wrap_1d_func(f)
+        return self._proj(f)
 
 class FunctionMap:
     def __init__(self, fmap, prec, dim=None):

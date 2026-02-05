@@ -255,7 +255,7 @@ template <int D> void trees(pybind11::module &m) {
             return os.str();
         });
 
-    py::class_<FunctionTree<D, double>, MWTree<D, double>, RepresentableFunction<D, double>>(m, (std::string("FunctionTree") + std::to_string(D) + "D").c_str())
+    auto ft_real = py::class_<FunctionTree<D, double>, MWTree<D, double>, RepresentableFunction<D, double>>(m, (std::string("FunctionTree") + std::to_string(D) + "D").c_str())
         .def(py::init<const MultiResolutionAnalysis<D> &, const std::string &>(), "mra"_a, "name"_a = "nn")
         .def("nGenNodes", &FunctionTree<D, double>::getNGenNodes)
         .def("deleteGenerated", &FunctionTree<D, double>::deleteGenerated)
@@ -313,6 +313,13 @@ template <int D> void trees(pybind11::module &m) {
         .def("__itruediv__", &impl__truediv__<D>, py::is_operator())
         .def("__pow__", &impl__pow__<D>, py::is_operator())
         .def("__ipow__", &impl__pow__<D>, py::is_operator());
+
+    // 1D scalar evaluation: tree(0.5) instead of tree([0.5])
+    if constexpr (D == 1) {
+        ft_real.def("__call__", [](FunctionTree<D, double> &self, double x) {
+            return self.evalf_precise({x});
+        });
+    }
 
     py::class_<MWNode<D, double>>(m, (std::string("MWNode") + std::to_string(D) + "D").c_str())
         .def("depth", &MWNode<D, double>::getDepth)
@@ -417,7 +424,7 @@ template <int D> void trees(pybind11::module &m) {
         });
 
     // Complex FunctionTree bindings (all dimensions)
-    py::class_<FunctionTree<D, ComplexDouble>, MWTree<D, ComplexDouble>>(m, (std::string("FunctionTree") + std::to_string(D) + "D_Complex").c_str())
+    auto ft_complex = py::class_<FunctionTree<D, ComplexDouble>, MWTree<D, ComplexDouble>>(m, (std::string("FunctionTree") + std::to_string(D) + "D_Complex").c_str())
         .def(py::init<const MultiResolutionAnalysis<D> &, const std::string &>(), "mra"_a, "name"_a = "nn")
         .def("nGenNodes", &FunctionTree<D, ComplexDouble>::getNGenNodes)
         .def("deleteGenerated", &FunctionTree<D, ComplexDouble>::deleteGenerated)
@@ -486,6 +493,13 @@ template <int D> void trees(pybind11::module &m) {
         .def("__rmul__", py::overload_cast<FunctionTree<D, ComplexDouble> *, ComplexDouble>(&impl_complex__mul__<D>), py::is_operator())
         .def("__truediv__", &impl_complex__truediv__<D>, py::is_operator())
         .def("__itruediv__", &impl_complex__truediv__<D>, py::is_operator());
+
+    // 1D scalar evaluation: complex_tree(0.5) instead of complex_tree([0.5])
+    if constexpr (D == 1) {
+        ft_complex.def("__call__", [](FunctionTree<D, ComplexDouble> &self, double x) {
+            return self.evalf_precise({x});
+        });
+    }
 
     // Complex MWNode bindings (all dimensions)
     py::class_<MWNode<D, ComplexDouble>>(m, (std::string("MWNode") + std::to_string(D) + "D_Complex").c_str())
