@@ -7,9 +7,9 @@ dependencies:
   #- mrcpp
   - matplotlib
   - ninja
-  - numpy
+  - numpy >=2.0
   - pip
   - pybind11
   - pytest
   - pytest-cov
-  - python >=3.8
+  - python >=3.13

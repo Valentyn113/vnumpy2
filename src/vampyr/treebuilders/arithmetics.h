@@ -145,6 +145,74 @@ template <int D> void arithmetics(pybind11::module &m) {
             return out;
         },
         "inp"_a);
+
+    // Complex versions of sum and prod
+ 
+    m.def(
+        "sum",
+        [](std::vector<FunctionTree<D, ComplexDouble> *> &inp) {
+            auto out = std::unique_ptr<FunctionTree<D, ComplexDouble>>(nullptr);
+            if (inp.size() > 0) {
+                auto &mra = inp[0]->getMRA();
+                out = std::make_unique<FunctionTree<D, ComplexDouble>>(mra);
+                FunctionTreeVector<D, ComplexDouble> vec;
+                for (auto *tree : inp) vec.push_back({ComplexDouble(1.0, 0.0), tree});
+                build_grid(*out, vec);
+                add(-1.0, *out, vec);
+            }
+            return out;
+        },
+        "inp"_a);
+ 
+    m.def(
+        "sum",
+        [](std::vector<std::tuple<ComplexDouble, FunctionTree<D, ComplexDouble> *>> &inp) {
+            auto out = std::unique_ptr<FunctionTree<D, ComplexDouble>>(nullptr);
+            if (inp.size() > 0) {
+                auto &mra = std::get<1>(inp[0])->getMRA();
+                out = std::make_unique<FunctionTree<D, ComplexDouble>>(mra);
+                FunctionTreeVector<D, ComplexDouble> vec;
+                for (auto &t : inp) vec.push_back({std::get<0>(t), std::get<1>(t)});
+                build_grid(*out, vec);
+                add(-1.0, *out, vec);
+            }
+            return out;
+        },
+        "inp"_a);
+ 
+    m.def(
+        "prod",
+        [](std::vector<FunctionTree<D, ComplexDouble> *> &inp) {
+            auto out = std::unique_ptr<FunctionTree<D, ComplexDouble>>(nullptr);
+            if (inp.size() > 0) {
+                auto &mra = inp[0]->getMRA();
+                out = std::make_unique<FunctionTree<D, ComplexDouble>>(mra);
+                FunctionTreeVector<D, ComplexDouble> vec;
+                for (auto *tree : inp) vec.push_back({ComplexDouble(1.0, 0.0), tree});
+                build_grid(*out, vec);
+                build_grid(*out, 1);
+                multiply(-1.0, *out, vec);
+            }
+            return out;
+        },
+        "inp"_a);
+ 
+    m.def(
+        "prod",
+        [](std::vector<std::tuple<ComplexDouble, FunctionTree<D, ComplexDouble> *>> &inp) {
+            auto out = std::unique_ptr<FunctionTree<D, ComplexDouble>>(nullptr);
+            if (inp.size() > 0) {
+                auto &mra = std::get<1>(inp[0])->getMRA();
+                out = std::make_unique<FunctionTree<D, ComplexDouble>>(mra);
+                FunctionTreeVector<D, ComplexDouble> vec;
+                for (auto &t : inp) vec.push_back({std::get<0>(t), std::get<1>(t)});
+                build_grid(*out, vec);
+                build_grid(*out, 1);
+                multiply(-1.0, *out, vec);
+            }
+            return out;
+        },
+        "inp"_a);
 }
 
 template <int D> void advanced_arithmetics(pybind11::module &m) {
@@ -263,12 +331,141 @@ template <int D> void advanced_arithmetics(pybind11::module &m) {
           "inp"_a,
           "max_iter"_a = -1,
           "abs_prec"_a = false);
-     // ========================================================================
+    m.def("add",
+          [](double prec, FunctionTree<D, ComplexDouble> &out,
+             ComplexDouble a, FunctionTree<D, ComplexDouble> &inp_a,
+             ComplexDouble b, FunctionTree<D, ComplexDouble> &inp_b,
+             int max_iter, bool abs_prec) {
+              mrcpp::add<D, ComplexDouble>(prec, out, a, inp_a, b, inp_b,
+                                           max_iter, abs_prec);
+          },
+          "prec"_a = -1.0,
+          "out"_a,
+          "a"_a,
+          "inp_a"_a,
+          "b"_a,
+          "inp_b"_a,
+          "max_iter"_a = -1,
+          "abs_prec"_a = false,
+          "Compute out = a*inp_a + b*inp_b for complex FunctionTrees.");
+ 
+    m.def("add",
+          [](double prec, FunctionTree<D, ComplexDouble> &out,
+             std::vector<FunctionTree<D, ComplexDouble> *> &inp,
+             int max_iter, bool abs_prec) {
+              FunctionTreeVector<D, ComplexDouble> vec;
+              for (auto *tree : inp) vec.push_back({ComplexDouble(1.0, 0.0), tree});
+              mrcpp::add<D, ComplexDouble>(prec, out, vec, max_iter, abs_prec);
+          },
+          "prec"_a = -1.0,
+          "out"_a,
+          "inp"_a,
+          "max_iter"_a = -1,
+          "abs_prec"_a = false,
+          "Sum a list of complex FunctionTrees into out.");
+ 
+    m.def("add",
+          [](double prec, FunctionTree<D, ComplexDouble> &out,
+             std::vector<std::tuple<ComplexDouble, FunctionTree<D, ComplexDouble> *>> &inp,
+             int max_iter, bool abs_prec) {
+              FunctionTreeVector<D, ComplexDouble> vec;
+              for (auto &t : inp) vec.push_back({std::get<0>(t), std::get<1>(t)});
+              mrcpp::add<D, ComplexDouble>(prec, out, vec, max_iter, abs_prec);
+          },
+          "prec"_a = -1.0,
+          "out"_a,
+          "inp"_a,
+          "max_iter"_a = -1,
+          "abs_prec"_a = false,
+          "Compute out = sum_i c_i * tree_i for complex inputs.");
+ 
+    m.def("multiply",
+          [](double prec, FunctionTree<D, ComplexDouble> &out,
+             ComplexDouble c,
+             FunctionTree<D, ComplexDouble> &inp_a,
+             FunctionTree<D, ComplexDouble> &inp_b,
+             int max_iter, bool abs_prec, bool use_max_norms) {
+              mrcpp::multiply<D, ComplexDouble>(prec, out, c, inp_a, inp_b,
+                                                max_iter, abs_prec, use_max_norms);
+          },
+          "prec"_a = -1.0,
+          "out"_a,
+          "c"_a,
+          "inp_a"_a,
+          "inp_b"_a,
+          "max_iter"_a = -1,
+          "abs_prec"_a = false,
+          "use_max_norms"_a = false,
+          "Compute out = c * inp_a * inp_b for complex FunctionTrees.");
+ 
+    m.def("multiply",
+          [](double prec, FunctionTree<D, ComplexDouble> &out,
+             std::vector<FunctionTree<D, ComplexDouble> *> &inp,
+             int max_iter, bool abs_prec, bool use_max_norms) {
+              FunctionTreeVector<D, ComplexDouble> vec;
+              for (auto *tree : inp) vec.push_back({ComplexDouble(1.0, 0.0), tree});
+              mrcpp::multiply<D, ComplexDouble>(prec, out, vec, max_iter,
+                                                abs_prec, use_max_norms);
+          },
+          "prec"_a = -1.0,
+          "out"_a,
+          "inp"_a,
+          "max_iter"_a = -1,
+          "abs_prec"_a = false,
+          "use_max_norms"_a = false,
+          "Compute pointwise product of a list of complex FunctionTrees.");
+ 
+    m.def("multiply",
+          [](double prec, FunctionTree<D, ComplexDouble> &out,
+             std::vector<std::tuple<ComplexDouble, FunctionTree<D, ComplexDouble> *>> &inp,
+             int max_iter, bool abs_prec, bool use_max_norms) {
+              FunctionTreeVector<D, ComplexDouble> vec;
+              for (auto &t : inp) vec.push_back({std::get<0>(t), std::get<1>(t)});
+              mrcpp::multiply<D, ComplexDouble>(prec, out, vec, max_iter,
+                                                abs_prec, use_max_norms);
+          },
+          "prec"_a = -1.0,
+          "out"_a,
+          "inp"_a,
+          "max_iter"_a = -1,
+          "abs_prec"_a = false,
+          "use_max_norms"_a = false,
+          "Compute weighted pointwise product for complex inputs.");
+ 
+    m.def("power",
+          [](double prec, FunctionTree<D, ComplexDouble> &out,
+             FunctionTree<D, ComplexDouble> &inp,
+             double pow_, int max_iter, bool abs_prec) {
+              mrcpp::power<D, ComplexDouble>(prec, out, inp, pow_,
+                                             max_iter, abs_prec);
+          },
+          "prec"_a = -1.0,
+          "out"_a,
+          "inp"_a,
+          "pow"_a,
+          "max_iter"_a = -1,
+          "abs_prec"_a = false,
+          "Compute out = inp^pow for complex FunctionTrees.\n"
+          "Uses principal-branch convention.");
+ 
+    m.def("square",
+          [](double prec, FunctionTree<D, ComplexDouble> &out,
+             FunctionTree<D, ComplexDouble> &inp,
+             int max_iter, bool abs_prec) {
+              mrcpp::square<D, ComplexDouble>(prec, out, inp,
+                                              max_iter, abs_prec);
+          },
+          "prec"_a = -1.0,
+          "out"_a,
+          "inp"_a,
+          "max_iter"_a = -1,
+          "abs_prec"_a = false,
+          "Compute out = inp^2 for complex FunctionTrees (no conjugation).");
+
     // CompFunction free-function bindings 
     //
     // MRCPP currently instantiates most CompFunction free functions only for
     // D=3 (intended for 3D quantum chemistry codes).  We guard accordingly.
-    // ========================================================================
     if constexpr (D == 3) {
         // Deep copy
         m.def("deep_copy",
